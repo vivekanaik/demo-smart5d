@@ -3,7 +3,6 @@
 import React from "react";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
-import { MdOutlineKeyboardBackspace } from "react-icons/md";
 
 // Dummy data for our 4D menu items
 const MENU_ITEMS = [
@@ -129,27 +128,11 @@ function MenuItem({ item, onFallback }: { item: typeof MENU_ITEMS[0], onFallback
     };
     viewer.addEventListener('ar-status', handleStatus);
 
-    if (!isIOS) {
-       try {
-          // Explicitly ask for camera permission directly via browser prompt stream interception
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          // If approved, close stream instantly to hand control off strictly to WebXR components downstream
-          stream.getTracks().forEach(t => t.stop());
-       } catch (err) {
-          // Permission completely denied or no physical camera located (e.g. inside Instagram Android)
-          cleanup();
-          onFallback(item);
-          return;
-       }
-    }
-
     try {
         await viewer.activateAR();
-        if (isIOS) {
-            // QuickLook doesn't cleanly emit success status sometimes back to the browser 
-            // since it opens a native overlay. We timeout the loader so it cleans up visually.
-            setTimeout(cleanup, 1500); 
-        }
+        
+        // Failsafe timeout to clean up spinner if native intents swallow the success emit
+        setTimeout(cleanup, 2000); 
     } catch (error) {
         cleanup();
         onFallback(item); // WebXR failed fundamentally
@@ -278,10 +261,9 @@ export default function SmartMenuPage() {
         <div className="fixed inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center backdrop-blur-xl">
           <button 
              onClick={() => setFallbackItem(null)}
-             className="absolute top-6 left-6 z-[110] px-4 py-2 bg-white/5 backdrop-blur-md rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white border border-white/10 hover:bg-white/10 transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+             className="absolute top-6 left-6 z-[110] px-4 py-2 bg-white/5 backdrop-blur-md rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white border border-white/10 hover:bg-white/10 transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
           >
-             <span className="text-lg leading-none"><MdOutlineKeyboardBackspace />
-             </span> Back to Menu
+             <span className="text-lg leading-none">&larr;</span> Back to Menu
           </button>
           
           <div className="absolute bottom-10 z-[110] pointer-events-none w-full text-center px-4">
