@@ -8,39 +8,39 @@ import ModelViewer from "@/components/ModelViewer";
 const MENU_ITEMS = [
   {
     id: 1,
-    name: "Wagyu Beef Carpaccio",
-    description: "Ultra-thin A5 Miyazaki Wagyu, black truffle aioli, aged balsamic pearls, micro-basil.",
-    price: "₹4800",
+    name: "Mushroom Pizza",
+    description: "Wood-fired sourdough pizza, wild mushrooms, truffle oil, mozzarella, fresh basil.",
+    price: "₹780",
     modelUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
     posterUrl: "https://picsum.photos/seed/wagyu/400/400"
   },
   {
     id: 2,
-    name: "Saffron Gold Risotto",
-    description: "Acquerello rice, Persian saffron, 24k edible gold leaf, aged Parmigiano-Reggiano.",
-    price: "₹1160",
+    name: "Paneer Supreme Burger",
+    description: "Grilled paneer patty, saffron mayo, caramelized onions, lettuce, brioche bun.",
+    price: "₹420",
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb"
   },
   {
     id: 3,
-    name: "Glacier Seared Scallops",
-    description: "Hokkaido scallops, parsnip velvet, sea buckthorn reduction, crispy serrano ham.",
-    price: "₹1150",
+    name: "Umami Veg Ramen Bowl",
+    description: "Rich miso broth, ramen noodles, tofu cubes, shiitake mushrooms, baby corn, scallions.",
+    price: "₹360",
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "https://picsum.photos/seed/scallops/400/400"
   },
   {
     id: 4,
-    name: "Black Winter Tagliatelle",
-    description: "House-made egg pasta, cultured butter, 10g shaved Norcia black winter truffle.",
-    price: "₹7500",
+    name: "Creamy Pesto Tagliatelle",
+    description: "Fresh pasta tossed in basil pesto, roasted cherry tomatoes, parmesan, pine nuts.",
+    price: "₹540",
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb"
   },
   {
     id: 5,
-    name: "The Obsidian Sphere",
-    description: "70% Valrhona dark chocolate shell, salted caramel heart, liquid nitrogen smoke.",
-    price: "₹3200",
+    name: "Chocolate Lava Indulgence",
+    description: "Warm chocolate lava cake, molten center, vanilla bean ice cream, cocoa dust.",
+    price: "₹320",
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Corset/glTF-Binary/Corset.glb",
     posterUrl: "https://picsum.photos/seed/obsid/400/400"
   }
