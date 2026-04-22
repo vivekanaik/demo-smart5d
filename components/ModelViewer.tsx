@@ -73,8 +73,8 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           ar: true,
           'ar-modes': 'webxr scene-viewer quick-look',
           'ar-placement': 'floor',
-          'ar-scale': 'fixed',
-          'camera-orbit': '0deg 75deg 100%',
+          'ar-scale': 'auto',
+          'camera-orbit': '0deg 75deg auto',
           reveal: 'auto',
           className: "w-full h-full bg-transparent outline-none",
           style: { width: '100%', height: '100%', backgroundColor: 'transparent' }
@@ -100,22 +100,16 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
              <div className="absolute inset-0 z-[60] pointer-events-none">
                  
                  {/* Buttons - Bottom fixed on Mobile, Top centered on Desktop */}
-                 <div 
-                    className="absolute bottom-10 md:top-6 md:bottom-auto left-0 w-full flex justify-center gap-3 pointer-events-auto"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onPointerUp={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onTouchEnd={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                 >
+                 <div className="absolute bottom-10 md:top-6 md:bottom-auto left-0 w-full flex justify-center gap-3 pointer-events-none">
                     {ingredients && (
                       <button 
                          onClick={(e) => {
                              e.preventDefault();
-                             e.stopPropagation();
                              setActiveTab(activeTab === 'ingredients' ? null : 'ingredients')
                          }}
-                         className={`px-6 py-3 md:px-4 md:py-2 rounded-full backdrop-blur-md shadow-lg text-xs uppercase tracking-widest font-bold transition-all duration-300 border ${activeTab === 'ingredients' ? 'bg-white/30 border-white text-white drop-shadow-md' : 'bg-black/40 border-white/20 text-white/90 hover:bg-black/60'}`}
+                         onPointerDownCapture={(e) => e.stopPropagation()}
+                         onTouchStartCapture={(e) => e.stopPropagation()}
+                         className={`px-6 py-3 md:px-4 md:py-2 rounded-full backdrop-blur-md shadow-lg text-xs uppercase tracking-widest font-bold transition-all duration-300 border pointer-events-auto ${activeTab === 'ingredients' ? 'bg-white/30 border-white text-white drop-shadow-md' : 'bg-black/40 border-white/20 text-white/90 hover:bg-black/60'}`}
                       >
                          Ingredients
                       </button>
@@ -124,10 +118,11 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
                       <button 
                          onClick={(e) => {
                              e.preventDefault();
-                             e.stopPropagation();
                              setActiveTab(activeTab === 'nutrition' ? null : 'nutrition')
                          }}
-                         className={`px-6 py-3 md:px-4 md:py-2 rounded-full backdrop-blur-md shadow-lg text-xs uppercase tracking-widest font-bold transition-all duration-300 border ${activeTab === 'nutrition' ? 'bg-white/30 border-white text-white drop-shadow-md' : 'bg-black/40 border-white/20 text-white/90 hover:bg-black/60'}`}
+                         onPointerDownCapture={(e) => e.stopPropagation()}
+                         onTouchStartCapture={(e) => e.stopPropagation()}
+                         className={`px-6 py-3 md:px-4 md:py-2 rounded-full backdrop-blur-md shadow-lg text-xs uppercase tracking-widest font-bold transition-all duration-300 border pointer-events-auto ${activeTab === 'nutrition' ? 'bg-white/30 border-white text-white drop-shadow-md' : 'bg-black/40 border-white/20 text-white/90 hover:bg-black/60'}`}
                       >
                          Nutrition
                       </button>
@@ -180,9 +175,10 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           {/* Explicit Custom WebXR Close Button to prevent invisible native buttons */}
           <button 
             slot="exit-webxr-ar-button" 
-            className="absolute top-6 right-6 z-[120] w-12 h-12 flex items-center justify-center"
+            className="absolute top-6 right-6 z-[120] w-12 h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/30 text-white pointer-events-auto hover:bg-black/60 shadow-lg cursor-pointer"
+            style={{ display: 'flex', pointerEvents: 'auto' }}
           >
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </>
       )}
