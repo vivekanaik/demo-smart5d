@@ -1,0 +1,6 @@
+{
+  "name": "Smart 5D Restaurant Menu",
+  "description": "A premium WebAR restaurant menu featuring 3D dish visualization.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

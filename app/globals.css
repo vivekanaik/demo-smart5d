@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-serif: "Georgia", serif;
+  --font-sans: "Helvetica Neue", Arial, sans-serif;
+  --color-gold: #c5a059;
+}
+
+@layer base {
+  :root {
+    --color-bg-satin: #ffffff;
+    --bg-satin: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #f0f0f0 100%), linear-gradient(135deg, rgba(0,0,0,0.03) 0%, transparent 50%, rgba(0,0,0,0.03) 100%);
+    --bg-glass: rgba(0,0,0,0.02);
+    --border-glass: rgba(0,0,0,0.08);
+  }
+
+  :root.dark {
+    --color-bg-satin: #080808;
+    --bg-satin: radial-gradient(ellipse at 50% 40%, #1a1a1a 0%, #080808 100%), linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%, rgba(255,255,255,0.03) 100%);
+    --bg-glass: rgba(255,255,255,0.02);
+    --border-glass: rgba(255,255,255,0.08);
+  }
+}
+
+@layer utilities {
+  .bg-satin {
+    background-color: var(--color-bg-satin);
+    background-image: var(--bg-satin);
+    background-attachment: fixed;
+  }
+
+  .bg-glass {
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    backdrop-filter: blur(10px);
+  }
+
+  .text-gold {
+    color: var(--color-gold);
+  }
+
+  .border-gold {
+    border-color: rgba(197, 160, 89, 0.3);
+  }
+}
+
+body {
+  transition: background 0.5s ease;
+  margin: 0;
+  padding: 0;
+}
