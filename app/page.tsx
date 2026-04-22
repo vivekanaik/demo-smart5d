@@ -38,21 +38,21 @@ const MENU_ITEMS = [
   },
   {
     id: 4,
-    name: "Pesto Paneer Pasta",
-    description: "Creamy basil pesto pasta tossed with grilled paneer and cherry tomatoes.",
+    name: "Pesto Paneer Noodles",
+    description: "Stir-fried noodles tossed in creamy basil pesto with grilled paneer, crunchy vegetables, and herbs.",
     price: "₹300",
-    ingredients: ["Pasta", "Paneer", "Basil Pesto", "Cherry Tomatoes", "Olive Oil", "Parmesan"],
-    nutrition: { calories: "520 kcal", protein: "20g", carbs: "60g", fat: "22g" },
+    ingredients: ["Noodles", "Paneer", "Basil Pesto Sauce", "Capsicum", "Onion", "Cherry Tomatoes", "Olive Oil", "Garlic", "Chili Flakes"],
+    nutrition: { calories: "480 kcal", protein: "18g", carbs: "58g", fat: "18g" },
     modelUrl: "/food/noodles.glb",
     posterUrl: "/5d.png"
   },
   {
     id: 5,
     name: "Bombay Sandwich",
-    description: "Warm sandwich cake with a cheese, tomato, cucumber, capsicum served with french fries.",
+    description: "Grilled Mumbai-style sandwich layered with spiced potato filling, fresh cucumber, tomato, onion, mint chutney, and cheese, served with fries.",
     price: "₹180",
-    ingredients: ["Dark Chocolate", "Flour", "Butter", "Sugar", "Egg Substitute", "Vanilla Ice Cream"],
-    nutrition: { calories: "600 kcal", protein: "6g", carbs: "55g", fat: "38g" },
+    ingredients: ["Bread", "Boiled Potato", "Cucumber", "Tomato", "Onion", "Capsicum", "Mint Chutney", "Butter", "Cheese", "Chaat Masala"],
+    nutrition: { calories: "350 kcal", protein: "10g", carbs: "45g", fat: "14g" },
     modelUrl: "/food/sandwich.glb",
     posterUrl: "/5d.png"
   }
