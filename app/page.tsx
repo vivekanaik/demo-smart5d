@@ -8,41 +8,53 @@ import ModelViewer from "@/components/ModelViewer";
 const MENU_ITEMS = [
   {
     id: 1,
-    name: "Mushroom Pizza",
-    description: "Wood-fired sourdough pizza, wild mushrooms, truffle oil, mozzarella, fresh basil.",
-    price: "₹780",
+    name: "Truffle Mushroom Pizza",
+    description: "Wood-fired pizza with creamy truffle sauce, wild mushrooms, mozzarella, and fresh basil.",
+    price: "₹480",
+    ingredients: ["Pizza Dough", "Mozzarella", "Mushrooms", "Truffle Oil", "Garlic", "Basil"],
+    nutrition: { calories: "420 kcal", protein: "14g", carbs: "48g", fat: "18g" },
     modelUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    posterUrl: "https://picsum.photos/seed/wagyu/400/400"
+    posterUrl: "/5d.png"
   },
   {
     id: 2,
-    name: "Paneer Supreme Burger",
-    description: "Grilled paneer patty, saffron mayo, caramelized onions, lettuce, brioche bun.",
-    price: "₹420",
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb"
+    name: "Classic Veggie Burger",
+    description: "Grilled veggie patty with lettuce, tomato, cheese, and house sauce in a toasted bun.",
+    price: "₹220",
+    ingredients: ["Burger Bun", "Veg Patty", "Lettuce", "Tomato", "Cheese Slice", "Mayonnaise"],
+    nutrition: { calories: "380 kcal", protein: "10g", carbs: "42g", fat: "16g" },
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+    posterUrl: "/5d.png"
   },
   {
     id: 3,
-    name: "Umami Veg Ramen Bowl",
-    description: "Rich miso broth, ramen noodles, tofu cubes, shiitake mushrooms, baby corn, scallions.",
-    price: "₹360",
+    name: "Spicy Veg Ramen",
+    description: "Rich vegetable broth ramen with noodles, tofu, corn, mushrooms, and chili oil.",
+    price: "₹350",
+    ingredients: ["Ramen Noodles", "Tofu", "Corn", "Mushrooms", "Vegetable Broth", "Chili Oil"],
+    nutrition: { calories: "460 kcal", protein: "18g", carbs: "58g", fat: "14g" },
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
-    posterUrl: "https://picsum.photos/seed/scallops/400/400"
+    posterUrl: "/5d.png"
   },
   {
     id: 4,
-    name: "Creamy Pesto Tagliatelle",
-    description: "Fresh pasta tossed in basil pesto, roasted cherry tomatoes, parmesan, pine nuts.",
-    price: "₹540",
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb"
+    name: "Pesto Paneer Pasta",
+    description: "Creamy basil pesto pasta tossed with grilled paneer and cherry tomatoes.",
+    price: "₹300",
+    ingredients: ["Pasta", "Paneer", "Basil Pesto", "Cherry Tomatoes", "Olive Oil", "Parmesan"],
+    nutrition: { calories: "520 kcal", protein: "20g", carbs: "60g", fat: "22g" },
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb",
+    posterUrl: "/5d.png"
   },
   {
     id: 5,
-    name: "Chocolate Lava Indulgence",
-    description: "Warm chocolate lava cake, molten center, vanilla bean ice cream, cocoa dust.",
-    price: "₹320",
+    name: "Chocolate Lava Cake",
+    description: "Warm chocolate cake with a gooey molten center, served with vanilla ice cream.",
+    price: "₹180",
+    ingredients: ["Dark Chocolate", "Flour", "Butter", "Sugar", "Egg Substitute", "Vanilla Ice Cream"],
+    nutrition: { calories: "600 kcal", protein: "6g", carbs: "55g", fat: "38g" },
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Corset/glTF-Binary/Corset.glb",
-    posterUrl: "https://picsum.photos/seed/obsid/400/400"
+    posterUrl: "/5d.png"
   }
 ];
 
@@ -145,7 +157,14 @@ function MenuItem({ item, onFallback }: { item: typeof MENU_ITEMS[0], onFallback
       {/* Left Side: 3D Viewer Container */}
       <div className="w-full md:w-1/5 h-48 md:h-auto bg-white/50 dark:bg-black/50 flex items-center justify-center relative shrink-0">
         <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"></div>
-        <ModelViewer id={`viewer-${item.id}`} src={item.modelUrl} alt={item.name} poster={item.posterUrl} />
+        <ModelViewer 
+            id={`viewer-${item.id}`} 
+            src={item.modelUrl} 
+            alt={item.name} 
+            poster={item.posterUrl} 
+            ingredients={item.ingredients} 
+            nutrition={item.nutrition} 
+        />
         
         {/* Subtle AR indication overlay via AR modes */}
         <div className="absolute top-2 left-2 pointer-events-none z-10 text-[8px] uppercase tracking-tighter text-black/50 dark:text-white/30 border border-black/10 dark:border-white/10 p-2 bg-white/20 dark:bg-black/20 backdrop-blur-xs">
@@ -280,6 +299,9 @@ export default function SmartMenuPage() {
                id={`fallback-viewer-${fallbackItem.id}`} 
                src={fallbackItem.modelUrl} 
                alt={fallbackItem.name} 
+               ingredients={fallbackItem.ingredients}
+               nutrition={fallbackItem.nutrition}
+               showInteractiveUI={true}
             />
           </div>
         </div>

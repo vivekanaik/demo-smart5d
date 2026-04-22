@@ -1,8 +1,15 @@
 import type { Metadata } from 'next';
+import { Rum_Raisin } from 'next/font/google';
 import './globals.css';
 
+const rumRaisin = Rum_Raisin({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-rum-raisin',
+});
+
 export const metadata: Metadata = {
-  title: 'L\'Etoile | Menu',
+  title: '5D MENU | Smart Menu',
   description: 'Smart 5D Restaurant Menu featuring Augmented Reality',
 };
 
@@ -29,7 +36,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased min-h-screen text-black dark:text-white bg-satin transition-colors duration-500 font-sans">
+      <body className={`antialiased min-h-screen text-black dark:text-white bg-satin transition-colors duration-500 font-sans ${rumRaisin.variable}`}>
         {children}
       </body>
     </html>
