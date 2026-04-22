@@ -13,7 +13,7 @@ const MENU_ITEMS = [
     price: "₹480",
     ingredients: ["Pizza Dough", "Mozzarella", "Mushrooms", "Truffle Oil", "Garlic", "Basil"],
     nutrition: { calories: "420 kcal", protein: "14g", carbs: "48g", fat: "18g" },
-    modelUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+    modelUrl: "/food/pizza.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -23,7 +23,7 @@ const MENU_ITEMS = [
     price: "₹220",
     ingredients: ["Burger Bun", "Veg Patty", "Lettuce", "Tomato", "Cheese Slice", "Mayonnaise"],
     nutrition: { calories: "380 kcal", protein: "10g", carbs: "42g", fat: "16g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+    modelUrl: "/food/burger.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -33,7 +33,7 @@ const MENU_ITEMS = [
     price: "₹350",
     ingredients: ["Ramen Noodles", "Tofu", "Corn", "Mushrooms", "Vegetable Broth", "Chili Oil"],
     nutrition: { calories: "460 kcal", protein: "18g", carbs: "58g", fat: "14g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
+    modelUrl: "/food/ramen.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -43,17 +43,17 @@ const MENU_ITEMS = [
     price: "₹300",
     ingredients: ["Pasta", "Paneer", "Basil Pesto", "Cherry Tomatoes", "Olive Oil", "Parmesan"],
     nutrition: { calories: "520 kcal", protein: "20g", carbs: "60g", fat: "22g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb",
+    modelUrl: "/food/noodles.glb",
     posterUrl: "/5d.png"
   },
   {
     id: 5,
-    name: "Chocolate Lava Cake",
-    description: "Warm chocolate cake with a gooey molten center, served with vanilla ice cream.",
+    name: "Bombay Sandwich",
+    description: "Warm sandwich cake with a cheese, tomato, cucumber, capsicum served with french fries.",
     price: "₹180",
     ingredients: ["Dark Chocolate", "Flour", "Butter", "Sugar", "Egg Substitute", "Vanilla Ice Cream"],
     nutrition: { calories: "600 kcal", protein: "6g", carbs: "55g", fat: "38g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Corset/glTF-Binary/Corset.glb",
+    modelUrl: "/food/sandwich.glb",
     posterUrl: "/5d.png"
   }
 ];
