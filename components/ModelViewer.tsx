@@ -68,12 +68,15 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           alt,
           poster,
           'camera-controls': true,
+          'auto-rotate': true,
+          'interaction-prompt': 'none',
           ar: true,
           'ar-modes': 'webxr scene-viewer quick-look',
           'ar-placement': 'floor',
-          bounds: 'tight',
-          'ar-scale': 'auto',
+          'ar-scale': 'fixed',
+          'camera-orbit': '0deg 75deg 100%',
           reveal: 'auto',
+          className: "w-full h-full bg-transparent outline-none",
           style: { width: '100%', height: '100%', backgroundColor: 'transparent' }
         },
         <>
@@ -94,22 +97,37 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           
           {/* Custom AR Overlay UI */}
           {showUI && (ingredients || nutrition) && (
-             <div className="absolute inset-0 z-50 pointer-events-none">
+             <div className="absolute inset-0 z-[60] pointer-events-none">
                  
-                 {/* Top Buttons Centered */}
-                 <div className="absolute top-6 left-0 w-full flex justify-center gap-3 pointer-events-auto">
+                 {/* Buttons - Bottom fixed on Mobile, Top centered on Desktop */}
+                 <div 
+                    className="absolute bottom-10 md:top-6 md:bottom-auto left-0 w-full flex justify-center gap-3 pointer-events-auto"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                 >
                     {ingredients && (
                       <button 
-                         onClick={() => setActiveTab(activeTab === 'ingredients' ? null : 'ingredients')}
-                         className={`px-4 py-2 rounded-full backdrop-blur-md shadow-sm text-[10px] sm:text-xs uppercase tracking-widest font-bold transition-all duration-300 ${activeTab === 'ingredients' ? 'bg-white/20 border border-white/40 text-white' : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10'}`}
+                         onClick={(e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             setActiveTab(activeTab === 'ingredients' ? null : 'ingredients')
+                         }}
+                         className={`px-6 py-3 md:px-4 md:py-2 rounded-full backdrop-blur-md shadow-lg text-xs uppercase tracking-widest font-bold transition-all duration-300 border ${activeTab === 'ingredients' ? 'bg-white/30 border-white text-white drop-shadow-md' : 'bg-black/40 border-white/20 text-white/90 hover:bg-black/60'}`}
                       >
                          Ingredients
                       </button>
                     )}
                     {nutrition && (
                       <button 
-                         onClick={() => setActiveTab(activeTab === 'nutrition' ? null : 'nutrition')}
-                         className={`px-4 py-2 rounded-full backdrop-blur-md shadow-sm text-[10px] sm:text-xs uppercase tracking-widest font-bold transition-all duration-300 ${activeTab === 'nutrition' ? 'bg-white/20 border border-white/40 text-white' : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10'}`}
+                         onClick={(e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             setActiveTab(activeTab === 'nutrition' ? null : 'nutrition')
+                         }}
+                         className={`px-6 py-3 md:px-4 md:py-2 rounded-full backdrop-blur-md shadow-lg text-xs uppercase tracking-widest font-bold transition-all duration-300 border ${activeTab === 'nutrition' ? 'bg-white/30 border-white text-white drop-shadow-md' : 'bg-black/40 border-white/20 text-white/90 hover:bg-black/60'}`}
                       >
                          Nutrition
                       </button>
@@ -118,17 +136,17 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
 
                  {/* Floating Plain Text Panels */}
                  {activeTab === 'ingredients' && ingredients && (
-                    <div className="absolute top-28 left-0 w-full px-4 sm:px-10 flex justify-between items-start pointer-events-none animate-in fade-in duration-500">
-                       <ul className="flex flex-col gap-y-12 w-[42%]">
+                    <div className="absolute top-16 md:top-24 left-0 w-full px-4 sm:px-10 flex justify-between items-start pointer-events-none animate-in fade-in duration-500">
+                       <ul className="flex flex-col gap-y-10 w-[42%]">
                           {ingredients.slice(0, Math.ceil(ingredients.length / 2)).map((ing, idx) => (
-                             <li key={idx} className="text-xl sm:text-2xl font-rum-raisin text-white tracking-wide text-left pointer-events-auto leading-snug" style={{ textShadow: '0px 2px 12px rgba(0,0,0,0.95), 0px 1px 4px rgba(0,0,0,0.9)' }}>
+                             <li key={idx} className="text-xl sm:text-2xl font-rum-raisin text-white tracking-wide text-left pointer-events-auto leading-snug drop-shadow-2xl" style={{ textShadow: '0px 2px 14px rgba(0,0,0,0.95), 0px 1px 4px rgba(0,0,0,0.9)' }}>
                                 {ing}
                              </li>
                           ))}
                        </ul>
-                       <ul className="flex flex-col gap-y-12 w-[42%] items-end">
+                       <ul className="flex flex-col gap-y-10 w-[42%] items-end">
                           {ingredients.slice(Math.ceil(ingredients.length / 2)).map((ing, idx) => (
-                             <li key={idx} className="text-xl sm:text-2xl font-rum-raisin text-white tracking-wide text-right pointer-events-auto leading-snug" style={{ textShadow: '0px 2px 12px rgba(0,0,0,0.95), 0px 1px 4px rgba(0,0,0,0.9)' }}>
+                             <li key={idx} className="text-xl sm:text-2xl font-rum-raisin text-white tracking-wide text-right pointer-events-auto leading-snug drop-shadow-2xl" style={{ textShadow: '0px 2px 14px rgba(0,0,0,0.95), 0px 1px 4px rgba(0,0,0,0.9)' }}>
                                 {ing}
                              </li>
                           ))}
@@ -137,7 +155,7 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
                  )}
 
                  {activeTab === 'nutrition' && nutrition && (
-                    <div className="absolute top-28 left-0 w-full flex flex-wrap justify-center gap-8 sm:gap-14 pointer-events-auto animate-in fade-in duration-500">
+                    <div className="absolute top-24 left-0 w-full flex flex-wrap justify-center gap-6 sm:gap-14 pointer-events-auto animate-in fade-in duration-500">
                           <div className="text-center">
                               <p className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-amber-400 mb-1" style={{ textShadow: '0px 1px 4px rgba(0,0,0,0.9)' }}>Calories</p>
                               <p className="font-rum-raisin text-3xl sm:text-4xl text-white tracking-wide" style={{ textShadow: '0px 2px 8px rgba(0,0,0,0.9), 0px 1px 3px rgba(0,0,0,0.8)' }}>{nutrition.calories}</p>
@@ -159,8 +177,13 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
              </div>
           )}
 
-          {/* Custom hidden AR button to prevent generic overlapping but retain functionality */}
-          <button slot="ar-button" style={{display: 'none'}} />
+          {/* Explicit Custom WebXR Close Button to prevent invisible native buttons */}
+          <button 
+            slot="exit-webxr-ar-button" 
+            className="absolute top-6 right-6 z-[120] w-12 h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/30 text-white pointer-events-auto hover:bg-black/60 shadow-lg cursor-pointer"
+          >
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </>
       )}
     </div>
