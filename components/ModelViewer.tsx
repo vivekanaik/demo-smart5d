@@ -180,9 +180,9 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           {/* Explicit Custom WebXR Close Button to prevent invisible native buttons */}
           <button 
             slot="exit-webxr-ar-button" 
-            className="absolute top-6 right-6 z-[120] w-12 h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/30 text-white pointer-events-auto hover:bg-black/60 shadow-lg cursor-pointer"
+            className="absolute top-6 right-6 z-[120] w-12 h-12 flex items-center justify-center"
           >
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </>
       )}
