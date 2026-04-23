@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
 import { Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, LayoutGrid, Search, List as ListIcon, ShoppingCart, Plus, Minus, User, X } from "lucide-react";
+import { IoSearch } from "react-icons/io5";
 
 // Dummy data for our 4D menu items
 const MENU_ITEMS = [
@@ -233,22 +234,22 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
           </p>
         </div>
         <div className={`flex items-center justify-between w-full ${isGrid ? 'flex-row' : 'flex-row md:flex-col md:w-auto md:items-end mt-auto md:mt-0'}`}>
-          <span className={`font-serif text-[15px] md:text-xl text-gold ${isGrid ? 'mb-0' : 'mb-0 md:mb-2'}`}>{item.price}</span>
+          <span className={`font-serif text-[15px] md:text-xl text-gold ${isGrid ? 'mb-0' : 'mb-0 md:mb-2 mr-1'}`}>{item.price}</span>
           
           {quantity > 0 ? (
-            <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full h-7 md:h-8">
-               <button onClick={() => updateQuantity(item.id, -1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-l-full cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
+            <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-7 md:h-8">
+               <button onClick={() => updateQuantity(item.id, -1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-sm cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
                   <Minus size={12} strokeWidth={3} />
                </button>
                <span className="text-[11px] md:text-xs font-bold text-black dark:text-white w-5 text-center">{quantity}</span>
-               <button onClick={() => updateQuantity(item.id, 1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-r-full cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
+               <button onClick={() => updateQuantity(item.id, 1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-sm cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
                   <Plus size={12} strokeWidth={3} />
                </button>
             </div>
           ) : (
             <button 
                onClick={() => updateQuantity(item.id, 1)}
-               className="px-6 py-1.5 md:py-2 bg-black/80 dark:bg-black/50 backdrop-blur-md border border-black dark:border-white/20 text-white rounded-full text-[9px] md:text-[10px] uppercase font-bold tracking-[0.2em] hover:text-gold transition-colors shadow-sm cursor-pointer"
+               className="px-6 py-1.5 md:py-2 bg-black/80 dark:bg-black/50 backdrop-blur-md border border-black dark:border-white/20 text-white rounded-sm text-[9px] md:text-[10px] uppercase font-bold tracking-[0.2em] hover:text-gold transition-colors shadow-sm cursor-pointer"
             >
               ADD
             </button>
@@ -403,7 +404,7 @@ export default function SmartMenuPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-10 flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search - approx 60-70% width */}
             <div className="relative w-full md:w-2/3 shrink-0">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" size={16} />
+              <IoSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 z-10" size={16} />
               <input 
                 type="text" 
                 placeholder="Search menu or ingredients..." 
