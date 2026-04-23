@@ -18,7 +18,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Pizza Dough", "Mozzarella", "Mushrooms", "Truffle Oil", "Garlic", "Basil"],
     nutrition: { calories: "420 kcal", protein: "14g", carbs: "48g", fat: "18g" },
-    modelUrl: "/food/pizza.glb",
+    // Placeholder: 3D Avocado (Standard WebXR placeholder for missing food items)
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -30,7 +31,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Burger Bun", "Veg Patty", "Lettuce", "Tomato", "Cheese Slice", "Mayonnaise"],
     nutrition: { calories: "380 kcal", protein: "10g", carbs: "42g", fat: "16g" },
-    modelUrl: "/food/burger.glb",
+    // Public Burger model from a WebVR demo
+    modelUrl: "https://raw.githubusercontent.com/code4fukui/vr-crafeat/main/kani-burger.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -42,7 +44,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Ramen Noodles", "Tofu", "Corn", "Mushrooms", "Vegetable Broth", "Chili Oil"],
     nutrition: { calories: "460 kcal", protein: "18g", carbs: "58g", fat: "14g" },
-    modelUrl: "/food/ramen.glb",
+    // Public Yaki Udon / Ramen bowl model 
+    modelUrl: "https://raw.githubusercontent.com/code4mongolia/opendata-gourmet/main/haku-yakiudon.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -54,7 +57,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Noodles", "Paneer", "Basil Pesto Sauce", "Capsicum", "Onion", "Cherry Tomatoes", "Olive Oil", "Garlic", "Chili Flakes"],
     nutrition: { calories: "480 kcal", protein: "18g", carbs: "58g", fat: "18g" },
-    modelUrl: "/food/noodles.glb",
+    // Public plate model of food/noodles
+    modelUrl: "https://raw.githubusercontent.com/code4mongolia/opendata-gourmet/main/newmnkosen-lunch1.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -66,7 +70,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Bread", "Boiled Potato", "Cucumber", "Tomato", "Onion", "Capsicum", "Mint Chutney", "Butter", "Cheese", "Chaat Masala"],
     nutrition: { calories: "350 kcal", protein: "10g", carbs: "45g", fat: "14g" },
-    modelUrl: "/food/sandwich.glb",
+    // Placeholder: 3D Avocado
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -78,6 +83,7 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Mixed Greens", "Feta Cheese", "Olives", "Cucumber", "Cherry Tomatoes", "Vinaigrette"],
     nutrition: { calories: "210 kcal", protein: "8g", carbs: "12g", fat: "16g" },
+    // Placeholder: 3D Avocado (Fits the salad theme well)
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
@@ -90,7 +96,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Sourdough", "Butter", "Garlic", "Parsley", "Sea Salt"],
     nutrition: { calories: "320 kcal", protein: "6g", carbs: "45g", fat: "12g" },
-    modelUrl: "/food/sandwich.glb",
+    // Placeholder: 3D Avocado
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -102,7 +109,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Dark Chocolate", "Flour", "Butter", "Eggs", "Sugar", "Gold Crumbs"],
     nutrition: { calories: "580 kcal", protein: "8g", carbs: "52g", fat: "35g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Lantern/glTF-Binary/Lantern.glb",
+    // Public 3D Cake model
+    modelUrl: "https://raw.githubusercontent.com/code4fukui/ar-handtrack-torus/main/cake.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -114,7 +122,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Blue Curaçao Syrup", "Mint", "Lime", "Sparkling Water", "Ice"],
     nutrition: { calories: "140 kcal", protein: "0g", carbs: "35g", fat: "0g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+    // Public Water Bottle / Drink placeholder
+    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/WaterBottle/glTF-Binary/WaterBottle.glb",
     posterUrl: "/5d.png"
   },
   {
@@ -126,7 +135,8 @@ const MENU_ITEMS = [
     diet: "Non-Veg",
     ingredients: ["Chicken Breast", "Yogurt", "Tikka Masala", "Lemon Juice", "Garlic", "Ginger"],
     nutrition: { calories: "280 kcal", protein: "35g", carbs: "8g", fat: "12g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
+    // Public meat dish / skewer placeholder model
+    modelUrl: "https://raw.githubusercontent.com/code4fukui/vr-crafeat/main/shishiniku.glb",
     posterUrl: "/5d.png"
   }
 ];
