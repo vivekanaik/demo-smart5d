@@ -189,12 +189,13 @@ function Header({ cartCount }: { cartCount: number }) {
 function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: { item: typeof MENU_ITEMS[0], onFallback: (item: typeof MENU_ITEMS[0]) => void, layout?: 'list' | 'grid', cart: Record<number, number>, updateQuantity: (id: number, delta: number) => void }) {
   const isGrid = layout === 'grid';
   const quantity = cart[item.id] || 0;
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <article className={`flex ${isGrid ? 'flex-col min-h-[140px]' : 'flex-row h-32 md:h-40'} bg-glass rounded-sm overflow-hidden group transition-transform duration-300 shadow-sm`}>
+    <article className={`flex ${isGrid ? 'flex-col min-h-[140px]' : 'flex-row min-h-[8rem] md:min-h-[10rem] h-auto'} bg-glass rounded-sm overflow-hidden group transition-all duration-500 shadow-sm items-stretch`}>
       
       {/* Left Side: 3D Viewer Container */}
-      <div className={`shrink-0 ${isGrid ? 'w-full h-48' : 'w-2/5 md:w-1/4 h-full'} bg-white/50 dark:bg-black/50 flex items-center justify-center relative`}>
+      <div className={`shrink-0 ${isGrid ? 'w-full h-48' : 'w-2/5 md:w-1/4 self-stretch min-h-[8rem] md:min-h-[10rem]'} bg-white/50 dark:bg-black/50 flex items-center justify-center relative overflow-hidden`}>
         <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"></div>
         <ModelViewer 
             id={`viewer-${item.id}`} 
@@ -224,37 +225,88 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
       </div>
 
       {/* Right Side: Dish Details */}
-      <div className={`flex flex-col justify-between ${isGrid ? 'p-5 items-center text-center w-full' : 'p-3 md:p-6 md:flex-row md:items-center w-3/5 md:w-3/4'}`}>
-        <div className={`space-y-1 ${isGrid ? 'mb-4 w-full' : 'mb-2 md:mb-0 md:max-w-xl'}`}>
+      <div className={`flex flex-col justify-between ${isGrid ? 'p-5 items-center text-center w-full' : 'p-3 md:p-6 md:flex-row w-3/5 md:w-3/4'}`}>
+        <div className={`space-y-1.5 flex flex-col justify-center ${isGrid ? 'mb-4 w-full' : 'mb-2 md:mb-0 md:max-w-xl md:mr-4'}`}>
           <h2 className={`font-serif italic tracking-wide text-black dark:text-white flex items-center gap-2 ${isGrid ? 'text-xl md:text-2xl justify-center' : 'text-sm md:text-2xl line-clamp-1 md:justify-start'}`}>
             {item.name}
           </h2>
-          <p className={`text-[10px] md:text-sm text-black/60 dark:text-white/50 font-light leading-relaxed ${isGrid ? 'line-clamp-3' : 'line-clamp-2'}`}>
-            {item.description}
-          </p>
-        </div>
-        <div className={`flex items-center justify-between w-full ${isGrid ? 'flex-row' : 'flex-row md:flex-col md:w-auto md:items-end mt-auto md:mt-0'}`}>
-          <span className={`font-serif text-[15px] md:text-xl text-gold ${isGrid ? 'mb-0' : 'mb-0 md:mb-2 mr-1'}`}>{item.price}</span>
-          
-          {quantity > 0 ? (
-            <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-7 md:h-8">
-               <button onClick={() => updateQuantity(item.id, -1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-sm cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
-                  <Minus size={12} strokeWidth={3} />
-               </button>
-               <span className="text-[11px] md:text-xs font-bold text-black dark:text-white w-5 text-center">{quantity}</span>
-               <button onClick={() => updateQuantity(item.id, 1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-sm cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
-                  <Plus size={12} strokeWidth={3} />
-               </button>
-            </div>
-          ) : (
-            <button 
-               onClick={() => updateQuantity(item.id, 1)}
-               className="px-6 py-1.5 md:py-2 bg-black/80 dark:bg-black/50 backdrop-blur-md border border-black dark:border-white/20 text-white rounded-sm text-[9px] md:text-[10px] uppercase font-bold tracking-[0.2em] hover:text-gold transition-colors shadow-sm cursor-pointer"
-            >
-              ADD
-            </button>
-          )}
+          <div className="flex flex-col space-y-1.5">
+             <p className={`text-[10px] md:text-sm text-black/60 dark:text-white/50 font-light leading-relaxed transition-all duration-300 ${!isExpanded ? (isGrid ? 'line-clamp-3' : 'line-clamp-2') : ''}`}>
+               {item.description}
+             </p>
+             
+             {/* Expanding details view using grid template rows for smooth animation */}
+             <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'}`}>
+                <div className="overflow-hidden">
+                   <div className="pb-1 space-y-4 pt-1 flex flex-col items-stretch">
+                      {/* Ingredients */}
+                      <div>
+                         <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-black/40 dark:text-white/40 mb-2 font-bold">Ingredients</p>
+                         <div className={`flex flex-wrap gap-1.5 ${isGrid ? 'justify-center' : 'justify-start'}`}>
+                            {item.ingredients.map((ing, idx) => (
+                               <span key={idx} className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-sm text-[9px] md:text-[10px] text-black/70 dark:text-white/70 border border-black/10 dark:border-white/10">{ing}</span>
+                            ))}
+                         </div>
+                      </div>
+                      
+                      {/* Nutritional Info */}
+                      <div>
+                         <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-black/40 dark:text-white/40 mb-2 font-bold">Nutrition</p>
+                         <div className={`grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 w-full ${isGrid ? 'max-w-[200px] sm:max-w-[240px] mx-auto' : 'max-w-[200px] sm:max-w-[280px]'}`}>
+                            {[
+                               { label: 'Cal', value: item.nutrition?.calories },
+                               { label: 'Pro', value: item.nutrition?.protein },
+                               { label: 'Carbs', value: item.nutrition?.carbs },
+                               { label: 'Fat', value: item.nutrition?.fat }
+                            ].map((nut, idx) => (
+                               <div key={idx} className="flex flex-col items-center justify-center p-1.5 border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 rounded-sm">
+                                  <span className="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-wider mb-0.5">{nut.label}</span>
+                                  <span className="text-[10px] md:text-[11px] font-bold text-black/80 dark:text-white/80">{nut.value || '-'}</span>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+                   </div>
+                </div>
+             </div>
 
+             <button 
+                onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                className={`text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-gold hover:text-amber-500 transition-colors w-max py-0.5 ${isGrid ? 'mx-auto mt-2' : 'self-start mt-1'}`}
+             >
+                {isExpanded ? '- Less Info' : '+ More Info'}
+             </button>
+          </div>
+        </div>
+        <div className={`flex items-center justify-between shrink-0 w-full transition-all duration-500 ${isGrid ? 'flex-row mt-2' : 'flex-row md:flex-col md:w-[100px] md:items-end mt-auto md:mt-0 self-stretch md:py-1'}`}>
+          {!isGrid && <div className={`hidden md:block transition-[flex-grow,height] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full ${isExpanded ? 'flex-[0.0001] h-0' : 'flex-[1]'}`}></div>}
+          
+          <span className={`font-serif text-[15px] md:text-xl text-gold shrink-0 z-10 ${isGrid ? 'mb-0' : 'mb-0 md:mb-0 mr-1'}`}>{item.price}</span>
+          
+          {!isGrid && <div className={`hidden md:block transition-[flex-grow,height] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full shrink-0 ${isExpanded ? 'flex-[1]' : 'flex-[0.0001] h-2'}`}></div>}
+
+          <div className="shrink-0 z-10 flex flex-col items-end">
+             {quantity > 0 ? (
+               <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-7 md:h-8">
+                  <button onClick={() => updateQuantity(item.id, -1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-sm cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
+                     <Minus size={12} strokeWidth={3} />
+                  </button>
+                  <span className="text-[11px] md:text-xs font-bold text-black dark:text-white w-5 text-center">{quantity}</span>
+                  <button onClick={() => updateQuantity(item.id, 1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-sm cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
+                     <Plus size={12} strokeWidth={3} />
+                  </button>
+               </div>
+             ) : (
+               <button 
+                  onClick={() => updateQuantity(item.id, 1)}
+                  className="px-6 py-1.5 md:py-2 bg-black/80 dark:bg-black/50 backdrop-blur-md border border-black dark:border-white/20 text-white rounded-sm text-[9px] md:text-[10px] uppercase font-bold tracking-[0.2em] hover:text-gold transition-colors shadow-sm cursor-pointer"
+               >
+                 ADD
+               </button>
+             )}
+          </div>
+          
+          {!isGrid && <div className={`hidden md:block transition-[flex-grow,height] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full ${isExpanded ? 'flex-[0.0001] h-0' : 'flex-[1]'}`}></div>}
         </div>
       </div>
     </article>
