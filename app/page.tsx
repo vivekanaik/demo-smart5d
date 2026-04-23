@@ -5,6 +5,7 @@ import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
 import { Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, LayoutGrid, Search, List as ListIcon, ShoppingCart, Plus, Minus, User, X } from "lucide-react";
 import { IoSearch } from "react-icons/io5";
+import { RiBowlLine } from "react-icons/ri";
 
 // Dummy data for our 4D menu items
 const MENU_ITEMS = [
@@ -172,10 +173,10 @@ function Header({ cartCount }: { cartCount: number }) {
         <span className="uppercase tracking-[0.1em] text-[8px] sm:text-[10px] text-black/60 dark:text-white/60">5D Menu</span>
       </div>
       <div className="flex items-center space-x-4 sm:space-x-6">
-        <div className="relative group cursor-pointer p-1">
-           <ShoppingCart size={18} className="text-black/80 dark:text-white/80 transition-colors group-hover:text-gold" />
+        <div className="relative group cursor-pointer p-1 mr-2">
+           <RiBowlLine size={22} className="text-black/80 dark:text-white/80 transition-colors group-hover:text-gold" />
            {cartCount > 0 && (
-              <div className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-sm">
+              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-sm">
                  {cartCount}
               </div>
            )}
@@ -281,7 +282,7 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
         <div className={`flex items-center justify-between shrink-0 w-full transition-all duration-500 ${isGrid ? 'flex-row mt-2' : 'flex-row md:flex-col md:w-[100px] md:items-end mt-auto md:mt-0 self-stretch md:py-1'}`}>
           {!isGrid && <div className={`hidden md:block transition-[flex-grow,height] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full ${isExpanded ? 'flex-[0.0001] h-0' : 'flex-[1]'}`}></div>}
           
-          <span className={`font-serif text-[15px] md:text-xl text-gold shrink-0 z-10 ${isGrid ? 'mb-0' : 'mb-0 md:mb-0 mr-1'}`}>{item.price}</span>
+          <span className={`font-serif text-[15px] md:text-xl text-gold shrink-0 z-10 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isGrid ? 'mb-0' : `mr-1 ${isExpanded ? 'mb-0 md:mb-0' : 'mb-0 md:mb-2'}`}`}>{item.price}</span>
           
           {!isGrid && <div className={`hidden md:block transition-[flex-grow,height] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full shrink-0 ${isExpanded ? 'flex-[1]' : 'flex-[0.0001] h-2'}`}></div>}
 
@@ -417,7 +418,7 @@ export default function SmartMenuPage() {
         
         {/* Categories Section */}
         <section className="w-full bg-white/30 dark:bg-black/30 backdrop-blur-md border-b border-black/5 dark:border-white/5 sticky top-16 z-40">
-          <div className="max-w-6xl mx-auto px-4 sm:px-10">
+          <div className="w-full px-4 sm:px-10">
             <div className="flex overflow-x-auto py-4 gap-1.5 md:gap-2.5 no-scrollbar items-center">
               {CATEGORIES.map((cat) => {
                 const Icon = cat.icon;
@@ -453,9 +454,9 @@ export default function SmartMenuPage() {
 
         {/* Toolbar: Search, Diet & Layout Filters */}
         <section className="w-full pt-6 pb-2 z-30">
-          <div className="max-w-6xl mx-auto px-4 sm:px-10 flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Search - approx 60-70% width */}
-            <div className="relative w-full md:w-2/3 shrink-0">
+          <div className="w-full px-4 sm:px-10 flex flex-col md:flex-row gap-4 items-center justify-between">
+            {/* Search - dynamically sized for tablet support */}
+            <div className="relative w-full md:flex-1 shrink">
               <IoSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 z-10" size={16} />
               <input 
                 type="text" 
@@ -521,7 +522,7 @@ export default function SmartMenuPage() {
           </div>
         </section>
         
-        <main className={`flex-1 px-4 sm:px-10 py-6 max-w-6xl mx-auto w-full ${viewLayout === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'flex flex-col gap-4'}`}>
+        <main className={`flex-1 px-4 sm:px-10 py-6 w-full ${viewLayout === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6' : 'flex flex-col gap-4'}`}>
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => (
               <MenuItem key={item.id} item={item} onFallback={setFallbackItem} layout={viewLayout} cart={cart} updateQuantity={updateQuantity} />

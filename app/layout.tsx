@@ -36,7 +36,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`antialiased min-h-screen text-black dark:text-white bg-satin transition-colors duration-500 font-sans ${rumRaisin.variable}`}>
+      <body suppressHydrationWarning className={`antialiased min-h-screen text-black dark:text-white bg-satin transition-colors duration-500 font-sans ${rumRaisin.variable}`}>
         {children}
       </body>
     </html>
