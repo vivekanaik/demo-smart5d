@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
-import { Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, LayoutGrid, Search, List as ListIcon, ShoppingCart, Plus, Minus, User, X } from "lucide-react";
+import { Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X } from "lucide-react";
 import { IoSearch } from "react-icons/io5";
 import { RiBowlLine } from "react-icons/ri";
 
@@ -152,6 +152,11 @@ const CATEGORIES = [
   { id: 'Drinks', label: 'Drinks', icon: Coffee },
 ];
 
+function generateOrderId() {
+  const timestamp = Date.now().toString().slice(-6);
+  return `ORD-${timestamp}`;
+}
+
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
 
@@ -174,7 +179,7 @@ function ThemeToggle() {
   );
 }
 
-function Header({ cartCount }: { cartCount: number }) {
+function Header({ cartCount, onCartClick }: { cartCount: number; onCartClick: () => void }) {
   return (
     <header className="h-16 flex items-center justify-between px-4 sm:px-10 border-b border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40 backdrop-blur-md sticky top-0 z-50 transition-colors duration-500">
       <div className="flex items-center space-x-2 sm:space-x-4">
@@ -183,14 +188,19 @@ function Header({ cartCount }: { cartCount: number }) {
         <span className="uppercase tracking-[0.1em] text-[8px] sm:text-[10px] text-black/60 dark:text-white/60">5D Menu</span>
       </div>
       <div className="flex items-center space-x-4 sm:space-x-6">
-        <div className="relative group cursor-pointer p-1 mr-2">
+        <button
+          onClick={onCartClick}
+          disabled={cartCount === 0}
+          className={`relative group p-1 mr-2 transition-opacity ${cartCount === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          aria-label="Open cart orders"
+        >
            <RiBowlLine size={22} className="text-black/80 dark:text-white/80 transition-colors group-hover:text-gold" />
            {cartCount > 0 && (
               <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-sm">
                  {cartCount}
               </div>
            )}
-        </div>
+        </button>
         <ThemeToggle />
       </div>
     </header>
@@ -374,6 +384,16 @@ function Footer() {
 }
 
 export default function SmartMenuPage() {
+  type ConfirmedOrder = {
+    id: string;
+    customerName: string;
+    tableNumber: string;
+    contactNumber?: string;
+    createdAt: string;
+    total: number;
+    items: Array<{ id: number; name: string; quantity: number; price: number }>;
+  };
+
   const [fallbackItem, setFallbackItem] = useState<typeof MENU_ITEMS[0] | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   
@@ -383,8 +403,22 @@ export default function SmartMenuPage() {
   
   // Cart State
   const [cart, setCart] = useState<Record<number, number>>({});
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [orderStep, setOrderStep] = useState<'summary' | 'details' | 'confirmed'>('summary');
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [orderTableNumber, setOrderTableNumber] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
+  const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
+  const [orderHistory, setOrderHistory] = useState<ConfirmedOrder[]>([]);
   
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+  const cartItems = MENU_ITEMS.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
+    ...item,
+    quantity: cart[item.id],
+    numericPrice: Number(item.price.replace(/[^\d]/g, '')) || 0,
+  }));
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0);
 
   const updateQuantity = (itemId: number, delta: number) => {
      setCart(prev => {
@@ -399,6 +433,49 @@ export default function SmartMenuPage() {
         }
         return newCart;
      });
+  };
+
+  const openOrderModal = () => {
+    if (cartCount === 0) return;
+    setIsOrderModalOpen(true);
+    setOrderStep('summary');
+    setIsEditingOrder(false);
+  };
+
+  const closeOrderModal = () => {
+    setIsOrderModalOpen(false);
+    setOrderStep('summary');
+    setIsEditingOrder(false);
+  };
+
+  const confirmOrder = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (cartItems.length === 0) return;
+
+    const orderId = generateOrderId();
+    const newOrder: ConfirmedOrder = {
+      id: orderId,
+      customerName: customerName.trim(),
+      tableNumber: orderTableNumber.trim(),
+      contactNumber: contactNumber.trim() || undefined,
+      createdAt: new Date().toISOString(),
+      total: cartTotal,
+      items: cartItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.numericPrice,
+      })),
+    };
+
+    setOrderHistory((prev) => [newOrder, ...prev]);
+    setLatestOrderId(orderId);
+    setCart({});
+    setCustomerName('');
+    setOrderTableNumber('');
+    setContactNumber('');
+    setOrderStep('confirmed');
+    setIsEditingOrder(false);
   };
 
   // Search and Sort State
@@ -424,7 +501,7 @@ export default function SmartMenuPage() {
   return (
     <ThemeProvider>
       <div className="flex flex-col min-h-screen relative">
-        <Header cartCount={cartCount} />
+        <Header cartCount={cartCount} onCartClick={openOrderModal} />
         
         {/* Categories Section */}
         <section className="w-full bg-white/30 dark:bg-black/30 backdrop-blur-md border-b border-black/5 dark:border-white/5 sticky top-16 z-40">
@@ -619,6 +696,200 @@ export default function SmartMenuPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isOrderModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-4 sm:p-6 rounded-2xl shadow-2xl relative">
+            <button
+              onClick={closeOrderModal}
+              className="absolute top-4 right-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="pr-8">
+              <h3 className="text-xl sm:text-2xl font-serif italic text-black dark:text-white">Your Order</h3>
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-black/45 dark:text-white/45 mt-1">
+                {orderStep === 'summary'
+                  ? 'Order Summary'
+                  : orderStep === 'details'
+                    ? 'Guest Details'
+                    : 'Order Confirmed'}
+              </p>
+            </div>
+
+            {orderStep === 'summary' && (
+              <div className="mt-6 space-y-5">
+                {cartItems.length > 0 ? (
+                  <>
+                    <div className="space-y-2.5">
+                      {cartItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between gap-3 border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3 sm:p-4"
+                        >
+                          <div>
+                            <p className="text-sm sm:text-base font-semibold text-black dark:text-white">{item.name}</p>
+                            <p className="text-[11px] sm:text-xs text-black/55 dark:text-white/55">
+                              {item.price} each
+                            </p>
+                          </div>
+                          {isEditingOrder ? (
+                            <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-8">
+                              <button
+                                onClick={() => updateQuantity(item.id, -1)}
+                                className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
+                              >
+                                <Minus size={12} strokeWidth={3} />
+                              </button>
+                              <span className="text-[11px] md:text-xs font-bold text-black dark:text-white w-6 text-center">{item.quantity}</span>
+                              <button
+                                onClick={() => updateQuantity(item.id, 1)}
+                                className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
+                              >
+                                <Plus size={12} strokeWidth={3} />
+                              </button>
+                            </div>
+                          ) : (
+                            <p className="text-xs sm:text-sm text-black/75 dark:text-white/75">x{item.quantity}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-black/10 dark:border-white/10 pt-3">
+                      <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">Total</p>
+                      <p className="text-lg sm:text-xl font-serif text-gold">₹{cartTotal}</p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                      <button
+                        onClick={() => setIsEditingOrder((prev) => !prev)}
+                        className="w-full sm:w-auto px-6 py-2.5 border border-black/15 dark:border-white/15 rounded-xl text-[10px] sm:text-xs uppercase tracking-[0.2em] font-bold text-black/70 dark:text-white/70"
+                      >
+                        {isEditingOrder ? 'Done Editing' : 'Edit Order'}
+                      </button>
+                      <button
+                        onClick={() => setOrderStep('details')}
+                        className="w-full sm:flex-1 bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md"
+                      >
+                        Confirm Order
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="py-8 text-center text-black/55 dark:text-white/55 text-sm">
+                    Your cart is empty. Add items to continue.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {orderStep === 'details' && (
+              <form onSubmit={confirmOrder} className="mt-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1.5 ml-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    required
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-gold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
+                    placeholder="Guest name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1.5 ml-1">
+                    Table Number
+                  </label>
+                  <input
+                    type="number"
+                    value={orderTableNumber}
+                    onChange={(e) => setOrderTableNumber(e.target.value)}
+                    required
+                    min="1"
+                    className="no-spinners w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-gold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
+                    placeholder="e.g. 12"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1.5 ml-1">
+                    Number (Optional)
+                  </label>
+                  <input
+                    type="tel"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-gold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
+                    placeholder="Phone number"
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setOrderStep('summary')}
+                    className="w-full sm:w-auto px-6 py-2.5 border border-black/15 dark:border-white/15 rounded-xl text-[10px] sm:text-xs uppercase tracking-[0.2em] font-bold text-black/70 dark:text-white/70"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-full sm:flex-1 bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md"
+                  >
+                    Place Order
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {orderStep === 'confirmed' && (
+              <div className="mt-6 space-y-5">
+                <div className="border border-gold/35 bg-gold/10 rounded-xl p-4 sm:p-5">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-white/50">Order ID</p>
+                  <p className="text-2xl sm:text-3xl font-serif text-gold mt-1">{latestOrderId}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-black/50 dark:text-white/50 mb-2.5">
+                    Order History
+                  </p>
+                  <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                    {orderHistory.map((order) => (
+                      <div
+                        key={order.id}
+                        className="border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-black dark:text-white">{order.id}</p>
+                            <p className="text-[11px] text-black/55 dark:text-white/55">
+                              {order.customerName} | Table {order.tableNumber}
+                            </p>
+                          </div>
+                          <p className="text-sm font-serif text-gold">₹{order.total}</p>
+                        </div>
+                        <p className="text-[11px] text-black/50 dark:text-white/50 mt-1">
+                          {new Date(order.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={closeOrderModal}
+                  className="w-full bg-black text-white dark:bg-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md"
+                >
+                  Done
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
