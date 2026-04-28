@@ -1,16 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
+import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
 import { Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X } from "lucide-react";
 import { IoSearch } from "react-icons/io5";
 import { RiBowlLine } from "react-icons/ri";
+import { submitOrder } from "@/actions/orders"; 
+import { getMenuItems, getSettings } from "@/actions/settings"; // ✅ NEW IMPORTS
 
-// Dummy data for our 4D menu items
+// ✅ Offset Dummy IDs to 1001+ to avoid clashing with DB items which start at 1
 const MENU_ITEMS = [
   {
-    id: 1,
+    id: 1001,
     name: "Truffle Mushroom Pizza",
     description: "Wood-fired pizza with creamy truffle sauce, wild mushrooms, mozzarella, and fresh basil.",
     price: "₹480",
@@ -18,12 +21,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Pizza Dough", "Mozzarella", "Mushrooms", "Truffle Oil", "Garlic", "Basil"],
     nutrition: { calories: "420 kcal", protein: "14g", carbs: "48g", fat: "18g" },
-    // Placeholder: 3D Avocado (Standard WebXR placeholder for missing food items)
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 2,
+    id: 1002,
     name: "Classic Veggie Burger",
     description: "Grilled veggie patty with lettuce, tomato, cheese, and house sauce in a toasted bun.",
     price: "₹220",
@@ -31,12 +33,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Burger Bun", "Veg Patty", "Lettuce", "Tomato", "Cheese Slice", "Mayonnaise"],
     nutrition: { calories: "380 kcal", protein: "10g", carbs: "42g", fat: "16g" },
-    // Public Burger model from a WebVR demo
     modelUrl: "https://raw.githubusercontent.com/code4fukui/vr-crafeat/main/kani-burger.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 3,
+    id: 1003,
     name: "Spicy Veg Ramen",
     description: "Rich vegetable broth ramen with noodles, tofu, corn, mushrooms, and chili oil.",
     price: "₹350",
@@ -44,12 +45,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Ramen Noodles", "Tofu", "Corn", "Mushrooms", "Vegetable Broth", "Chili Oil"],
     nutrition: { calories: "460 kcal", protein: "18g", carbs: "58g", fat: "14g" },
-    // Public Yaki Udon / Ramen bowl model 
     modelUrl: "https://raw.githubusercontent.com/code4mongolia/opendata-gourmet/main/haku-yakiudon.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 4,
+    id: 1004,
     name: "Pesto Paneer Noodles",
     description: "Stir-fried noodles tossed in creamy basil pesto with grilled paneer, crunchy vegetables, and herbs.",
     price: "₹300",
@@ -57,12 +57,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Noodles", "Paneer", "Basil Pesto Sauce", "Capsicum", "Onion", "Cherry Tomatoes", "Olive Oil", "Garlic", "Chili Flakes"],
     nutrition: { calories: "480 kcal", protein: "18g", carbs: "58g", fat: "18g" },
-    // Public plate model of food/noodles
     modelUrl: "https://raw.githubusercontent.com/code4mongolia/opendata-gourmet/main/newmnkosen-lunch1.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 5,
+    id: 1005,
     name: "Bombay Sandwich",
     description: "Grilled Mumbai-style sandwich layered with spiced potato filling, fresh cucumber, tomato, onion, mint chutney, and cheese, served with fries.",
     price: "₹180",
@@ -70,12 +69,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Bread", "Boiled Potato", "Cucumber", "Tomato", "Onion", "Capsicum", "Mint Chutney", "Butter", "Cheese", "Chaat Masala"],
     nutrition: { calories: "350 kcal", protein: "10g", carbs: "45g", fat: "14g" },
-    // Placeholder: 3D Avocado
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 6,
+    id: 1006,
     name: "Mediterranean Feta Salad",
     description: "Crisp greens, kalamata olives, cucumber, cherry tomatoes, and feta cheese with a light vinaigrette.",
     price: "₹250",
@@ -83,12 +81,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Mixed Greens", "Feta Cheese", "Olives", "Cucumber", "Cherry Tomatoes", "Vinaigrette"],
     nutrition: { calories: "210 kcal", protein: "8g", carbs: "12g", fat: "16g" },
-    // Placeholder: 3D Avocado (Fits the salad theme well)
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 7,
+    id: 1007,
     name: "Artisan Garlic Bread",
     description: "Freshly baked sourdough bread brushed with roasted garlic and herb butter.",
     price: "₹150",
@@ -96,12 +93,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Sourdough", "Butter", "Garlic", "Parsley", "Sea Salt"],
     nutrition: { calories: "320 kcal", protein: "6g", carbs: "45g", fat: "12g" },
-    // Placeholder: 3D Avocado
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 8,
+    id: 1008,
     name: "Obsidian Lava Dessert",
     description: "Molten dark chocolate cake served over a bed of edible gold crumbs and liquid nitrogen.",
     price: "₹450",
@@ -109,12 +105,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Dark Chocolate", "Flour", "Butter", "Eggs", "Sugar", "Gold Crumbs"],
     nutrition: { calories: "580 kcal", protein: "8g", carbs: "52g", fat: "35g" },
-    // Public 3D Cake model
     modelUrl: "https://raw.githubusercontent.com/code4fukui/ar-handtrack-torus/main/cake.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 9,
+    id: 1009,
     name: "Blue Galactic Mojito",
     description: "A visually striking mix of blue curaçao, mint, lime, and sparkling water.",
     price: "₹190",
@@ -122,12 +117,11 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Blue Curaçao Syrup", "Mint", "Lime", "Sparkling Water", "Ice"],
     nutrition: { calories: "140 kcal", protein: "0g", carbs: "35g", fat: "0g" },
-    // Public Water Bottle / Drink placeholder
     modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/WaterBottle/glTF-Binary/WaterBottle.glb",
     posterUrl: "/5d.png"
   },
   {
-    id: 10,
+    id: 1010,
     name: "Chicken Tikka Skewers",
     description: "Tender chicken chunks marinated in spiced yogurt, grilled to perfection.",
     price: "₹320",
@@ -135,7 +129,6 @@ const MENU_ITEMS = [
     diet: "Non-Veg",
     ingredients: ["Chicken Breast", "Yogurt", "Tikka Masala", "Lemon Juice", "Garlic", "Ginger"],
     nutrition: { calories: "280 kcal", protein: "35g", carbs: "8g", fat: "12g" },
-    // Public meat dish / skewer placeholder model
     modelUrl: "https://raw.githubusercontent.com/code4fukui/vr-crafeat/main/shishiniku.glb",
     posterUrl: "/5d.png"
   }
@@ -207,7 +200,7 @@ function Header({ cartCount, onCartClick }: { cartCount: number; onCartClick: ()
   );
 }
 
-function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: { item: typeof MENU_ITEMS[0], onFallback: (item: typeof MENU_ITEMS[0]) => void, layout?: 'list' | 'grid', cart: Record<number, number>, updateQuantity: (id: number, delta: number) => void }) {
+function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: { item: any, onFallback: (item: any) => void, layout?: 'list' | 'grid', cart: Record<number, number>, updateQuantity: (id: number, delta: number) => void }) {
   const isGrid = layout === 'grid';
   const quantity = cart[item.id] || 0;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -215,7 +208,6 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
   return (
     <article className={`flex ${isGrid ? 'flex-col min-h-[140px]' : 'flex-row min-h-[8rem] md:min-h-[10rem] h-auto'} bg-glass rounded-sm overflow-hidden group transition-all duration-500 shadow-sm items-stretch`}>
       
-      {/* Left Side: 3D Viewer Container */}
       <div className={`shrink-0 ${isGrid ? 'w-full h-48' : 'w-2/5 md:w-1/4 self-stretch min-h-[8rem] md:min-h-[10rem]'} bg-white/50 dark:bg-black/50 flex items-center justify-center relative overflow-hidden`}>
         <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"></div>
         <ModelViewer 
@@ -227,17 +219,14 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
             nutrition={item.nutrition} 
         />
         
-        {/* Subtle AR indication overlay via AR modes */}
         <div className="absolute top-2 left-2 pointer-events-none z-10 text-[8px] uppercase tracking-tighter text-black/50 dark:text-white/30 border border-black/10 dark:border-white/10 p-1 bg-white/20 dark:bg-black/20 backdrop-blur-xs flex items-center gap-1.5 md:p-2">
            5D View
         </div>
 
-        {/* Veg/Non-Veg Indicator */}
         <div className="absolute top-2 right-2 pointer-events-none z-10 bg-white/60 dark:bg-black/60 backdrop-blur border border-black/10 dark:border-white/10 p-1 md:p-1.5 rounded-sm flex items-center justify-center">
             <div className={`w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full ${item.diet === 'Non-Veg' ? 'bg-red-600' : 'bg-green-600'}`}></div>
         </div>
         
-        {/* Decorative dots based on design HTML */}
         <div className="absolute bottom-2 left-2 flex space-x-1 opacity-20 pointer-events-none z-10">
           <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-black dark:bg-white rounded-full"></div>
           <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-black dark:bg-white rounded-full"></div>
@@ -245,7 +234,6 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
         </div>
       </div>
 
-      {/* Right Side: Dish Details */}
       <div className={`flex flex-col justify-between ${isGrid ? 'p-5 items-center text-center w-full' : 'p-3 md:p-6 md:flex-row w-3/5 md:w-3/4'}`}>
         <div className={`space-y-1.5 flex flex-col justify-center ${isGrid ? 'mb-4 w-full' : 'mb-2 md:mb-0 md:max-w-xl md:mr-4'}`}>
           <h2 className={`font-serif italic tracking-wide text-black dark:text-white flex items-center gap-2 ${isGrid ? 'text-xl md:text-2xl justify-center' : 'text-sm md:text-2xl line-clamp-1 md:justify-start'}`}>
@@ -256,37 +244,36 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
                {item.description}
              </p>
              
-             {/* Expanding details view using grid template rows for smooth animation */}
              <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0 mt-0 pointer-events-none'}`}>
                 <div className="overflow-hidden">
                    <div className="pb-1 space-y-4 pt-1 flex flex-col items-stretch">
-                      {/* Ingredients */}
                       <div>
                          <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-black/40 dark:text-white/40 mb-2 font-bold">Ingredients</p>
                          <div className={`flex flex-wrap gap-1.5 ${isGrid ? 'justify-center' : 'justify-start'}`}>
-                            {item.ingredients.map((ing, idx) => (
+                            {Array.isArray(item.ingredients) ? item.ingredients.map((ing: string, idx: number) => (
                                <span key={idx} className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-sm text-[9px] md:text-[10px] text-black/70 dark:text-white/70 border border-black/10 dark:border-white/10">{ing}</span>
-                            ))}
+                            )) : null}
                          </div>
                       </div>
                       
-                      {/* Nutritional Info */}
-                      <div>
-                         <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-black/40 dark:text-white/40 mb-2 font-bold">Nutrition</p>
-                         <div className={`grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 w-full ${isGrid ? 'max-w-[200px] sm:max-w-[240px] mx-auto' : 'max-w-[200px] sm:max-w-[280px]'}`}>
-                            {[
-                               { label: 'Cal', value: item.nutrition?.calories },
-                               { label: 'Pro', value: item.nutrition?.protein },
-                               { label: 'Carbs', value: item.nutrition?.carbs },
-                               { label: 'Fat', value: item.nutrition?.fat }
-                            ].map((nut, idx) => (
-                               <div key={idx} className="flex flex-col items-center justify-center p-1.5 border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 rounded-sm">
-                                  <span className="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-wider mb-0.5">{nut.label}</span>
-                                  <span className="text-[10px] md:text-[11px] font-bold text-black/80 dark:text-white/80">{nut.value || '-'}</span>
-                               </div>
-                            ))}
-                         </div>
-                      </div>
+                      {item.nutrition && (
+                        <div>
+                          <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-black/40 dark:text-white/40 mb-2 font-bold">Nutrition</p>
+                          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 w-full ${isGrid ? 'max-w-[200px] sm:max-w-[240px] mx-auto' : 'max-w-[200px] sm:max-w-[280px]'}`}>
+                              {[
+                                { label: 'Cal', value: item.nutrition.calories },
+                                { label: 'Pro', value: item.nutrition.protein },
+                                { label: 'Carbs', value: item.nutrition.carbs },
+                                { label: 'Fat', value: item.nutrition.fat }
+                              ].map((nut, idx) => (
+                                <div key={idx} className="flex flex-col items-center justify-center p-1.5 border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 rounded-sm">
+                                    <span className="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-wider mb-0.5">{nut.label}</span>
+                                    <span className="text-[10px] md:text-[11px] font-bold text-black/80 dark:text-white/80">{nut.value || '-'}</span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
                    </div>
                 </div>
              </div>
@@ -338,7 +325,6 @@ function Footer() {
   return (
     <footer className="w-full bg-glass-light dark:bg-glass border-t border-black/5 dark:border-white/5 mt-16 px-6 sm:px-10 py-12 flex flex-col md:flex-row justify-between gap-10 md:gap-0">
       
-      {/* Brand & Contact */}
       <div className="flex flex-col space-y-6 md:w-1/3">
         <div>
           <p className="font-serif italic text-xl text-black dark:text-white">The Obsidian Palace</p>
@@ -354,7 +340,6 @@ function Footer() {
         </div>
       </div>
 
-      {/* Quick Links */}
       <div className="flex flex-col space-y-2 md:w-1/3 md:items-center">
         <div className="flex flex-col space-y-3 w-fit">
           <p className="text-[8px] uppercase tracking-widest text-black/50 dark:text-white/30 mb-1">Explore</p>
@@ -364,7 +349,6 @@ function Footer() {
         </div>
       </div>
 
-      {/* Social & Connect */}
       <div className="flex flex-col space-y-2 md:w-1/3 md:items-end">
         <div className="flex flex-col space-y-3 w-fit md:text-right">
           <p className="text-[8px] uppercase tracking-widest text-black/50 dark:text-white/30 mb-1">Connect</p>
@@ -384,24 +368,35 @@ function Footer() {
 }
 
 export default function SmartMenuPage() {
+  // ✅ FETCH DYNAMIC DATA
+  const { data: dbMenuItems = [] } = useSWR("menuItems", getMenuItems);
+  const { data: dbSettings } = useSWR("settings", getSettings);
+
+  // ✅ Combine DB items with Dummy Items
+  const ALL_MENU_ITEMS = [...MENU_ITEMS, ...dbMenuItems];
+  
+  // ✅ Extract Dynamic GST Rate (Defaults to 5 if not loaded)
+  const currentGstRate = dbSettings?.gstRate ?? 5;
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   type ConfirmedOrder = {
     id: string;
     customerName: string;
     tableNumber: string;
     contactNumber?: string;
     createdAt: string;
-    total: number;
-    items: Array<{ id: number; name: string; quantity: number; price: number }>;
+    total: number; 
+    generalNote?: string;
+    items: Array<{ id: number; name: string; quantity: number; price: number; note?: string }>;
   };
 
-  const [fallbackItem, setFallbackItem] = useState<typeof MENU_ITEMS[0] | null>(null);
+  const [fallbackItem, setFallbackItem] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   
-  // Waiter Modal State
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState('');
   
-  // Cart State
   const [cart, setCart] = useState<Record<number, number>>({});
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [orderStep, setOrderStep] = useState<'summary' | 'details' | 'confirmed'>('summary');
@@ -409,16 +404,25 @@ export default function SmartMenuPage() {
   const [customerName, setCustomerName] = useState('');
   const [orderTableNumber, setOrderTableNumber] = useState('');
   const [contactNumber, setContactNumber] = useState('');
+  const [generalOrderNote, setGeneralOrderNote] = useState('');
+  const [itemNotes, setItemNotes] = useState<Record<number, string>>({});
   const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
   const [orderHistory, setOrderHistory] = useState<ConfirmedOrder[]>([]);
   
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
-  const cartItems = MENU_ITEMS.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
+  
+  // Map against ALL_MENU_ITEMS
+  const cartItems = ALL_MENU_ITEMS.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
     ...item,
     quantity: cart[item.id],
     numericPrice: Number(item.price.replace(/[^\d]/g, '')) || 0,
   }));
-  const cartTotal = cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0);
+  
+  const cartSubtotal = cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0);
+  
+  // ✅ Calculate GST Dynamically based on Settings
+  const gstAmount = Math.round(cartSubtotal * (currentGstRate / 100)); 
+  const cartGrandTotal = cartSubtotal + gstAmount;
 
   const updateQuantity = (itemId: number, delta: number) => {
      setCart(prev => {
@@ -448,53 +452,81 @@ export default function SmartMenuPage() {
     setIsEditingOrder(false);
   };
 
-  const confirmOrder = (e: React.FormEvent<HTMLFormElement>) => {
+  const confirmOrder = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (cartItems.length === 0) return;
+    setIsSubmitting(true);
 
     const orderId = generateOrderId();
-    const newOrder: ConfirmedOrder = {
+    
+    const orderData = {
       id: orderId,
-      customerName: customerName.trim(),
+      guestName: customerName.trim(), 
       tableNumber: orderTableNumber.trim(),
-      contactNumber: contactNumber.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      total: cartTotal,
-      items: cartItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.numericPrice,
-      })),
+      contactNumber: contactNumber.trim() || null,
+      generalNote: generalOrderNote.trim() || null,
+      total: cartGrandTotal,
+      status: "active" as const,
     };
 
-    setOrderHistory((prev) => [newOrder, ...prev]);
-    setLatestOrderId(orderId);
-    setCart({});
-    setCustomerName('');
-    setOrderTableNumber('');
-    setContactNumber('');
-    setOrderStep('confirmed');
-    setIsEditingOrder(false);
+    const dbItemsData = cartItems.map((item) => ({
+      menuItemId: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.numericPrice,
+      note: itemNotes[item.id]?.trim() || null,
+    }));
+
+    const response = await submitOrder(orderData, dbItemsData);
+
+    if (response.success) {
+      const finalOrderId = response.orderId || orderId;
+      setLatestOrderId(finalOrderId);
+      
+      const newHistoryItem: ConfirmedOrder = {
+        id: finalOrderId,
+        customerName: customerName.trim(),
+        tableNumber: orderTableNumber.trim(),
+        contactNumber: contactNumber.trim() || undefined,
+        createdAt: new Date().toISOString(),
+        total: cartGrandTotal,
+        generalNote: generalOrderNote.trim() || undefined,
+        items: cartItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.numericPrice,
+          note: itemNotes[item.id]?.trim() || undefined,
+        })),
+      };
+
+      setOrderHistory((prev) => [newHistoryItem, ...prev]);
+      
+      setCart({});
+      setCustomerName('');
+      setOrderTableNumber('');
+      setContactNumber('');
+      setGeneralOrderNote('');
+      setItemNotes({});
+      setOrderStep('confirmed');
+      setIsEditingOrder(false);
+    } else {
+      alert("Failed to place order. Please try again.");
+    }
+    setIsSubmitting(false);
   };
 
-  // Search and Sort State
   const [searchQuery, setSearchQuery] = useState("");
   const [dietFilter, setDietFilter] = useState<'All' | 'Veg' | 'Non-Veg'>('All');
   const [viewLayout, setViewLayout] = useState<'list' | 'grid'>('list');
 
-  const filteredItems = MENU_ITEMS.filter(item => {
-    // 1. Check Category
+  // Filter against ALL_MENU_ITEMS
+  const filteredItems = ALL_MENU_ITEMS.filter(item => {
     const matchCategory = activeCategory === 'All' || item.category === activeCategory;
-    
-    // 2. Check Search 
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        item.ingredients.some(ing => ing.toLowerCase().includes(searchQuery.toLowerCase()));
-                        
-    // 3. Check Diet
+                        (Array.isArray(item.ingredients) && item.ingredients.some((ing: string) => ing.toLowerCase().includes(searchQuery.toLowerCase())));
     const matchDiet = dietFilter === 'All' || item.diet === dietFilter;
-    
     return matchCategory && matchSearch && matchDiet;
   });
 
@@ -503,7 +535,6 @@ export default function SmartMenuPage() {
       <div className="flex flex-col min-h-screen relative">
         <Header cartCount={cartCount} onCartClick={openOrderModal} />
         
-        {/* Categories Section */}
         <section className="w-full bg-white/30 dark:bg-black/30 backdrop-blur-md border-b border-black/5 dark:border-white/5 sticky top-16 z-40">
           <div className="w-full px-4 sm:px-10">
             <div className="flex overflow-x-auto py-4 gap-1.5 md:gap-2.5 no-scrollbar items-center">
@@ -539,10 +570,8 @@ export default function SmartMenuPage() {
           </div>
         </section>
 
-        {/* Toolbar: Search, Diet & Layout Filters */}
         <section className="w-full pt-6 pb-2 z-30">
           <div className="w-full px-4 sm:px-10 flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Search - dynamically sized for tablet support */}
             <div className="relative w-full md:flex-1 shrink">
               <IoSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 z-10" size={16} />
               <input 
@@ -554,12 +583,9 @@ export default function SmartMenuPage() {
               />
             </div>
             
-            {/* Controls - diet and layout */}
             <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end shrink-0">
               
-              {/* Diet Toggle */}
               <div className="relative flex w-[180px] sm:w-[240px] bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full p-1 shadow-sm overflow-hidden">
-                {/* Animated Background Pill */}
                 <div 
                    className={`absolute top-1 bottom-1 w-[calc(33.333%-2.66px)] rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-sm ${
                       dietFilter === 'All' ? 'translate-x-[0px] bg-black dark:bg-white' :
@@ -583,7 +609,6 @@ export default function SmartMenuPage() {
                 ))}
               </div>
 
-              {/* Layout Toggle */}
               <div className="relative flex w-[72px] sm:w-[88px] bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full p-1 shadow-sm overflow-hidden">
                 <div 
                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-black dark:bg-white transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-sm ${
@@ -631,7 +656,6 @@ export default function SmartMenuPage() {
         <Footer />
       </div>
 
-      {/* Waiter FAB */}
       <button
         onClick={() => setIsWaiterModalOpen(true)}
         className={`group fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[60] flex items-center justify-center p-3 sm:p-4 rounded-full border whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
@@ -642,7 +666,6 @@ export default function SmartMenuPage() {
         </div>
       </button>
 
-      {/* Waiter Modal */}
       {isWaiterModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-2xl relative">
@@ -670,7 +693,6 @@ export default function SmartMenuPage() {
                  e.preventDefault(); 
                  setIsWaiterModalOpen(false); 
                  setTableNumber('');
-                 // Optionally show a toast here in the future
                }}
             >
               <div className="space-y-4">
@@ -703,9 +725,17 @@ export default function SmartMenuPage() {
       {isOrderModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
           <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-4 sm:p-6 rounded-2xl shadow-2xl relative">
+            
+            {isSubmitting && (
+              <div className="absolute inset-0 z-[110] flex flex-col items-center justify-center bg-white/60 dark:bg-[#0a0a0a]/60 backdrop-blur-md rounded-2xl">
+                <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin mb-4 shadow-lg"></div>
+                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-gold animate-pulse">Sending to Kitchen...</p>
+              </div>
+            )}
+
             <button
               onClick={closeOrderModal}
-              className="absolute top-4 right-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+              className="absolute top-4 right-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors cursor-pointer z-50"
             >
               <X size={18} />
             </button>
@@ -729,40 +759,78 @@ export default function SmartMenuPage() {
                       {cartItems.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between gap-3 border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3 sm:p-4"
+                          className="border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3 sm:p-4 space-y-3"
                         >
-                          <div>
-                            <p className="text-sm sm:text-base font-semibold text-black dark:text-white">{item.name}</p>
-                            <p className="text-[11px] sm:text-xs text-black/55 dark:text-white/55">
-                              {item.price} each
-                            </p>
-                          </div>
-                          {isEditingOrder ? (
-                            <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-8">
-                              <button
-                                onClick={() => updateQuantity(item.id, -1)}
-                                className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
-                              >
-                                <Minus size={12} strokeWidth={3} />
-                              </button>
-                              <span className="text-[11px] md:text-xs font-bold text-black dark:text-white w-6 text-center">{item.quantity}</span>
-                              <button
-                                onClick={() => updateQuantity(item.id, 1)}
-                                className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
-                              >
-                                <Plus size={12} strokeWidth={3} />
-                              </button>
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm sm:text-base font-semibold text-black dark:text-white">{item.name}</p>
+                              <p className="text-[11px] sm:text-xs text-black/55 dark:text-white/55">
+                                {item.price} each
+                              </p>
                             </div>
-                          ) : (
-                            <p className="text-xs sm:text-sm text-black/75 dark:text-white/75">x{item.quantity}</p>
-                          )}
+                            {isEditingOrder ? (
+                              <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-8 shrink-0">
+                                <button
+                                  onClick={() => updateQuantity(item.id, -1)}
+                                  className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
+                                >
+                                  <Minus size={12} strokeWidth={3} />
+                                </button>
+                                <span className="text-[11px] md:text-xs font-bold text-black dark:text-white w-6 text-center">{item.quantity}</span>
+                                <button
+                                  onClick={() => updateQuantity(item.id, 1)}
+                                  className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
+                                >
+                                  <Plus size={12} strokeWidth={3} />
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="text-xs sm:text-sm text-black/75 dark:text-white/75 shrink-0">x{item.quantity}</p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase tracking-[0.18em] text-black/45 dark:text-white/45 mb-1.5">
+                              Add Note (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={itemNotes[item.id] || ''}
+                              onChange={(e) => setItemNotes((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                              className="w-full bg-white/40 dark:bg-white/5 border border-black/10 dark:border-white/10 py-2 px-3 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-gold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
+                              placeholder={`Note for ${item.name}`}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-black/10 dark:border-white/10 pt-3">
-                      <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">Total</p>
-                      <p className="text-lg sm:text-xl font-serif text-gold">₹{cartTotal}</p>
+                    <div className="border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3 sm:p-4">
+                      <label className="block text-[10px] uppercase tracking-[0.18em] text-black/45 dark:text-white/45 mb-1.5">
+                        General Order Note (Optional)
+                      </label>
+                      <textarea
+                        value={generalOrderNote}
+                        onChange={(e) => setGeneralOrderNote(e.target.value)}
+                        rows={3}
+                        className="w-full resize-none bg-white/40 dark:bg-white/5 border border-black/10 dark:border-white/10 py-2.5 px-3 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-gold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
+                        placeholder="Example: Please serve all dishes together / less spicy / birthday table."
+                      />
+                    </div>
+
+                    <div className="space-y-2 border-t border-black/10 dark:border-white/10 pt-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">Subtotal</p>
+                        <p className="text-sm font-serif text-black dark:text-white">₹{cartSubtotal}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        {/* ✅ Dynamically shows the rate */}
+                        <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">GST ({currentGstRate}%)</p>
+                        <p className="text-sm font-serif text-black dark:text-white">₹{gstAmount}</p>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
+                        <p className="text-xs uppercase tracking-[0.2em] text-black/80 dark:text-white/80 font-bold">Grand Total</p>
+                        <p className="text-lg sm:text-xl font-serif text-gold font-bold">₹{cartGrandTotal}</p>
+                      </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
@@ -774,7 +842,7 @@ export default function SmartMenuPage() {
                       </button>
                       <button
                         onClick={() => setOrderStep('details')}
-                        className="w-full sm:flex-1 bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md"
+                        className="w-full sm:flex-1 bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                       >
                         Confirm Order
                       </button>
@@ -840,7 +908,7 @@ export default function SmartMenuPage() {
                   </button>
                   <button
                     type="submit"
-                    className="w-full sm:flex-1 bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md"
+                    className="w-full sm:flex-1 bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                   >
                     Place Order
                   </button>
@@ -860,31 +928,61 @@ export default function SmartMenuPage() {
                     Order History
                   </p>
                   <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                    {orderHistory.map((order) => (
-                      <div
-                        key={order.id}
-                        className="border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-semibold text-black dark:text-white">{order.id}</p>
-                            <p className="text-[11px] text-black/55 dark:text-white/55">
-                              {order.customerName} | Table {order.tableNumber}
-                            </p>
+                    {orderHistory.map((order, index) => {
+                      const histSubtotal = order.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+                      // ✅ Dynamically calculates history breakdown
+                      const histGst = Math.round(histSubtotal * (currentGstRate / 100));
+
+                      return (
+                        <div
+                          key={`${order.id}-${index}`}
+                          className="border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-black dark:text-white">{order.id}</p>
+                              <p className="text-[11px] text-black/55 dark:text-white/55">
+                                {order.customerName} | Table {order.tableNumber}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] text-black/55 dark:text-white/55">Subtotal: ₹{histSubtotal}</p>
+                              <p className="text-[10px] text-black/55 dark:text-white/55 mb-0.5">GST: ₹{histGst}</p>
+                              <p className="text-sm font-serif text-gold font-bold">Total: ₹{order.total}</p>
+                            </div>
                           </div>
-                          <p className="text-sm font-serif text-gold">₹{order.total}</p>
+                          <p className="text-[11px] text-black/50 dark:text-white/50 mt-1">
+                            {new Date(order.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                          
+                          <p className="text-[11px] text-black/70 dark:text-white/70 mt-1.5 leading-relaxed font-medium">
+                            {order.items.map(item => `${item.name} (${item.quantity})`).join(', ')}
+                          </p>
+
+                          {order.generalNote ? (
+                            <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-1.5">Note: {order.generalNote}</p>
+                          ) : null}
+                          
+                          {order.items.some((item) => item.note) ? (
+                            <div className="mt-1.5 space-y-1">
+                              {order.items
+                                .filter((item) => item.note)
+                                .map((item) => (
+                                  <p key={`${order.id}-${item.id}`} className="text-[11px] text-black/60 dark:text-white/60">
+                                    {item.name}: {item.note}
+                                  </p>
+                                ))}
+                            </div>
+                          ) : null}
                         </div>
-                        <p className="text-[11px] text-black/50 dark:text-white/50 mt-1">
-                          {new Date(order.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
                 <button
                   onClick={closeOrderModal}
-                  className="w-full bg-black text-white dark:bg-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md"
+                  className="w-full bg-black text-white dark:bg-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                 >
                   Done
                 </button>

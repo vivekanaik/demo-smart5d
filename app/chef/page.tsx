@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import {
   BarChart3,
@@ -13,72 +14,45 @@ import {
   Layers,
   Landmark,
   CalendarClock,
+  Check,
+  MessageCircle,
+  Mail,
+  Banknote,
+  X
 } from "lucide-react";
 
+import { getActiveOrders, updateOrderStatus, updateOrderItemStatus } from "@/actions/orders";
+import { getSettings } from "@/actions/settings"; // ✅ NEW IMPORT
+
 type OrderItem = {
+  id: number;
   name: string;
-  qty: number;
+  quantity: number;
+  price: number;
+  note?: string | null;
+  status: "pending" | "served";
+  createdAt: string | Date;
 };
 
 type ActiveOrder = {
   id: string;
-  tableNumber: number;
-  orderedAt: string;
+  tableNumber: string;
+  createdAt: string | Date;
   guestName: string;
-  specialNote?: string;
+  contactNumber?: string | null;
+  generalNote?: string | null;
+  total: number;
   items: OrderItem[];
 };
 
 type ClosedOrder = ActiveOrder & {
-  closedAt: string;
+  closedAt: string | Date;
   closedStatus: "completed" | "cancelled";
 };
 
 type AnalyticsWindow = "daily" | "weekly" | "monthly" | "yearly";
 type OrderView = "all" | "active" | "previous" | "cancelled";
 type DashboardView = "orders" | "analytics";
-
-const INITIAL_ACTIVE_ORDERS: ActiveOrder[] = [
-  {
-    id: "ORD-1041",
-    tableNumber: 12,
-    orderedAt: "2026-04-24T11:10:00.000Z",
-    guestName: "Rohan",
-    specialNote: "No onion in burger",
-    items: [
-      { name: "Classic Veggie Burger", qty: 2 },
-      { name: "Blue Galactic Mojito", qty: 2 },
-    ],
-  },
-  {
-    id: "ORD-1042",
-    tableNumber: 6,
-    orderedAt: "2026-04-24T11:18:00.000Z",
-    guestName: "Ananya",
-    items: [
-      { name: "Truffle Mushroom Pizza", qty: 1 },
-      { name: "Mediterranean Feta Salad", qty: 1 },
-    ],
-  },
-  {
-    id: "ORD-1043",
-    tableNumber: 3,
-    orderedAt: "2026-04-24T11:21:00.000Z",
-    guestName: "Kabir",
-    specialNote: "Extra spicy ramen",
-    items: [{ name: "Spicy Veg Ramen", qty: 3 }],
-  },
-  {
-    id: "ORD-1044",
-    tableNumber: 15,
-    orderedAt: "2026-04-24T11:30:00.000Z",
-    guestName: "Nisha",
-    items: [
-      { name: "Bombay Sandwich", qty: 2 },
-      { name: "Obsidian Lava Dessert", qty: 1 },
-    ],
-  },
-];
 
 const ANALYTICS_DATA: Record<
   AnalyticsWindow,
@@ -91,38 +65,10 @@ const ANALYTICS_DATA: Record<
     popularDish: string;
   }
 > = {
-  daily: {
-    revenue: "₹38,420",
-    completedOrders: 86,
-    cancelledOrders: 4,
-    avgPrepMinutes: 18,
-    occupancyRate: "74%",
-    popularDish: "Truffle Mushroom Pizza",
-  },
-  weekly: {
-    revenue: "₹2,61,300",
-    completedOrders: 578,
-    cancelledOrders: 21,
-    avgPrepMinutes: 19,
-    occupancyRate: "79%",
-    popularDish: "Spicy Veg Ramen",
-  },
-  monthly: {
-    revenue: "₹10,82,900",
-    completedOrders: 2410,
-    cancelledOrders: 96,
-    avgPrepMinutes: 20,
-    occupancyRate: "82%",
-    popularDish: "Classic Veggie Burger",
-  },
-  yearly: {
-    revenue: "₹1,34,48,600",
-    completedOrders: 29172,
-    cancelledOrders: 1183,
-    avgPrepMinutes: 21,
-    occupancyRate: "80%",
-    popularDish: "Truffle Mushroom Pizza",
-  },
+  daily: { revenue: "₹38,420", completedOrders: 86, cancelledOrders: 4, avgPrepMinutes: 18, occupancyRate: "74%", popularDish: "Truffle Mushroom Pizza" },
+  weekly: { revenue: "₹2,61,300", completedOrders: 578, cancelledOrders: 21, avgPrepMinutes: 19, occupancyRate: "79%", popularDish: "Spicy Veg Ramen" },
+  monthly: { revenue: "₹10,82,900", completedOrders: 2410, cancelledOrders: 96, avgPrepMinutes: 20, occupancyRate: "82%", popularDish: "Classic Veggie Burger" },
+  yearly: { revenue: "₹1,34,48,600", completedOrders: 29172, cancelledOrders: 1183, avgPrepMinutes: 21, occupancyRate: "80%", popularDish: "Truffle Mushroom Pizza" },
 };
 
 function ThemeToggle() {
@@ -145,29 +91,43 @@ function ThemeToggle() {
   );
 }
 
-function formatTime(isoString: string) {
-  return new Date(isoString).toLocaleTimeString("en-IN", {
+function formatTime(dateVal: string | Date) {
+  return new Date(dateVal).toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-function minutesSince(isoString: string) {
-  const diffMs = Date.now() - new Date(isoString).getTime();
+function minutesSince(dateVal: string | Date) {
+  const diffMs = Date.now() - new Date(dateVal).getTime();
   return Math.max(0, Math.floor(diffMs / 60000));
 }
 
 function ChefContent() {
+  // ✅ FETCH SETTINGS TO GET LIVE GST RATE
+  const { data: settings } = useSWR("settings", getSettings);
+  const gstRate = settings?.gstRate ?? 5; // Default 5% if not loaded
+
   const [dashboardView, setDashboardView] = useState<DashboardView>("orders");
   const [orderView, setOrderView] = useState<OrderView>("all");
   const [analyticsWindow, setAnalyticsWindow] = useState<AnalyticsWindow>("daily");
 
-  const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>(INITIAL_ACTIVE_ORDERS);
   const [previousOrders, setPreviousOrders] = useState<ClosedOrder[]>([]);
   const [cancelledOrders, setCancelledOrders] = useState<ClosedOrder[]>([]);
 
+  const [paymentOrder, setPaymentOrder] = useState<ActiveOrder | null>(null);
+  const [paymentTab, setPaymentTab] = useState<"whatsapp" | "email" | "external">("whatsapp");
+  const [paymentPhone, setPaymentPhone] = useState("");
+  const [paymentEmail, setPaymentEmail] = useState("");
+
+  const { data: activeOrders = [], mutate, isLoading } = useSWR<ActiveOrder[]>(
+    "activeOrders",
+    getActiveOrders,
+    { refreshInterval: 5000, fallbackData: [] }
+  );
+
   const sortedActiveOrders = useMemo(
-    () => [...activeOrders].sort((a, b) => new Date(a.orderedAt).getTime() - new Date(b.orderedAt).getTime()),
+    () => [...activeOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
     [activeOrders],
   );
 
@@ -181,25 +141,111 @@ function ChefContent() {
           ? "Previous Orders"
           : "Cancelled Orders";
 
-  const closeOrder = (order: ActiveOrder, status: "completed" | "cancelled") => {
+  const closeOrder = async (order: ActiveOrder, status: "completed" | "cancelled") => {
+    mutate(
+      (prev: ActiveOrder[] = []) => prev.filter((o) => o.id !== order.id),
+      false
+    );
+
     const closed: ClosedOrder = {
       ...order,
       closedStatus: status,
       closedAt: new Date().toISOString(),
     };
 
-    setActiveOrders((prev) => prev.filter((o) => o.id !== order.id));
-
     if (status === "completed") {
       setPreviousOrders((prev) => [closed, ...prev]);
-      return;
+    } else {
+      setCancelledOrders((prev) => [closed, ...prev]);
     }
 
-    setCancelledOrders((prev) => [closed, ...prev]);
+    await updateOrderStatus(order.id, status);
+    mutate();
+    setPaymentOrder(null);
+  };
+
+  const restoreOrder = async (order: ClosedOrder) => {
+    if (order.closedStatus === "completed") {
+      setPreviousOrders((prev) => prev.filter((o) => o.id !== order.id));
+    } else {
+      setCancelledOrders((prev) => prev.filter((o) => o.id !== order.id));
+    }
+
+    const restoredActiveOrder: ActiveOrder = {
+      id: order.id,
+      tableNumber: order.tableNumber,
+      createdAt: order.createdAt,
+      guestName: order.guestName,
+      generalNote: order.generalNote,
+      items: order.items,
+      total: order.total,
+    };
+    mutate((prev: ActiveOrder[] = []) => [restoredActiveOrder, ...prev], false);
+
+    await updateOrderStatus(order.id, "active");
+    mutate();
+  };
+
+  const toggleItemStatus = async (orderId: string, itemId: number, currentStatus: "pending" | "served") => {
+    const newStatus = currentStatus === "pending" ? "served" : "pending";
+
+    mutate((prevOrders: ActiveOrder[] = []) => {
+      return prevOrders.map(order => {
+        if (order.id === orderId) {
+          return {
+            ...order,
+            items: order.items.map(item => 
+              item.id === itemId ? { ...item, status: newStatus } : item
+            )
+          };
+        }
+        return order;
+      });
+    }, false);
+
+    await updateOrderItemStatus(itemId, newStatus);
+    mutate();
+  };
+
+  const openPaymentModal = (order: ActiveOrder) => {
+    setPaymentOrder(order);
+    setPaymentPhone(order.contactNumber || "");
+    setPaymentTab("whatsapp");
+  };
+
+  const handleWhatsAppSend = () => {
+    if (!paymentOrder) return;
+    
+    const itemsText = paymentOrder.items.map(i => `- ${i.name} x${i.quantity}`).join("%0A");
+    const subtotal = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    // ✅ Calculate Dynamic GST
+    const gstAmount = Math.round(subtotal * (gstRate / 100));
+    const upiLink = `upi://pay?pa=merchant@upi&pn=The%20Obsidian%20Palace&am=${paymentOrder.total}&cu=INR`;
+    
+    const text = `Hello ${paymentOrder.guestName}, thank you for dining at The Obsidian Palace! 🏰%0A%0A*Bill Summary (Table ${paymentOrder.tableNumber})*%0A${itemsText}%0A------------------%0A*Subtotal: ₹${subtotal}*%0A*GST (${gstRate}%): ₹${gstAmount}*%0A*Grand Total: ₹${paymentOrder.total}*%0A%0AClick here to pay instantly via UPI: ${upiLink}`;
+    
+    window.open(`https://wa.me/${paymentPhone}?text=${text}`, "_blank");
+    closeOrder(paymentOrder, "completed");
+  };
+
+  const handleEmailSend = () => {
+    if (!paymentOrder || !paymentEmail) return;
+    
+    const itemsText = paymentOrder.items.map(i => `- ${i.name} x${i.quantity}`).join("%0D%0A");
+    const subtotal = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    // ✅ Calculate Dynamic GST
+    const gstAmount = Math.round(subtotal * (gstRate / 100));
+    const upiLink = `upi://pay?pa=merchant@upi&pn=The%20Obsidian%20Palace&am=${paymentOrder.total}&cu=INR`;
+    
+    const subject = `Your Bill from The Obsidian Palace - Table ${paymentOrder.tableNumber}`;
+    const body = `Hello ${paymentOrder.guestName},%0D%0A%0D%0AThank you for dining with us!%0D%0A%0D%0ABill Summary:%0D%0A${itemsText}%0D%0A------------------%0D%0ASubtotal: ₹${subtotal}%0D%0AGST (${gstRate}%): ₹${gstAmount}%0D%0AGrand Total: ₹${paymentOrder.total}%0D%0A%0D%0APay via UPI: ${upiLink}`;
+    
+    window.open(`mailto:${paymentEmail}?subject=${subject}&body=${body}`, "_blank");
+    closeOrder(paymentOrder, "completed");
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative">
       <header className="h-16 flex items-center justify-between px-4 sm:px-10 border-b border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40 backdrop-blur-md sticky top-0 z-50 transition-colors duration-500">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <span className="uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[10px] sm:text-xs font-bold text-black dark:text-white">
@@ -212,6 +258,9 @@ function ChefContent() {
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          <a href="/chef/settings" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60 hover:text-gold transition">
+            Settings
+          </a>
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60">
             <ChefHat size={12} />
             Admin
@@ -287,69 +336,161 @@ function ChefContent() {
         <div className="space-y-7">
           {dashboardView === "orders" && (orderView === "all" || orderView === "active") && (
             <section className="space-y-3">
-              {sortedActiveOrders.length > 0 ? (
+              {isLoading && activeOrders.length === 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-                  {sortedActiveOrders.map((order, index) => (
-                    <article
-                      key={order.id}
-                      className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4 sm:p-5 shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[10px] uppercase tracking-[0.2em] text-gold font-bold">Queue #{index + 1}</p>
-                          <p className="text-sm sm:text-base font-bold tracking-wide text-black dark:text-white mt-1">{order.id}</p>
+                  {[1, 2, 3].map((i) => (
+                    <article key={i} className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4 sm:p-5 shadow-sm animate-pulse">
+                      <div className="flex justify-between gap-4 mb-4">
+                        <div className="space-y-2">
+                          <div className="w-16 h-3 bg-black/10 dark:bg-white/10 rounded"></div>
+                          <div className="w-24 h-5 bg-black/10 dark:bg-white/10 rounded"></div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Table</p>
-                          <p className="text-lg sm:text-xl font-bold text-black dark:text-white">{order.tableNumber}</p>
+                        <div className="space-y-2 items-end flex flex-col">
+                          <div className="w-10 h-3 bg-black/10 dark:bg-white/10 rounded"></div>
+                          <div className="w-8 h-6 bg-black/10 dark:bg-white/10 rounded"></div>
                         </div>
                       </div>
-
-                      <div className="mt-3 space-y-1.5 text-xs text-black/65 dark:text-white/65">
-                        <p>
-                          Guest: <span className="text-black dark:text-white">{order.guestName}</span>
-                        </p>
-                        <p>
-                          Ordered: <span className="text-black dark:text-white">{formatTime(order.orderedAt)}</span>
-                        </p>
-                        <p>
-                          Waiting: <span className="text-black dark:text-white">{minutesSince(order.orderedAt)} min</span>
-                        </p>
-                        {order.specialNote ? (
-                          <p className="text-amber-700 dark:text-amber-300">Note: {order.specialNote}</p>
-                        ) : null}
+                      <div className="space-y-2 mb-5 border-b border-black/10 dark:border-white/10 pb-4">
+                         <div className="w-3/4 h-3 bg-black/10 dark:bg-white/10 rounded"></div>
+                         <div className="w-1/2 h-3 bg-black/10 dark:bg-white/10 rounded"></div>
                       </div>
-
-                      <div className="mt-3.5 border-t border-black/10 dark:border-white/10 pt-3">
-                        <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45 mb-2">Items</p>
-                        <ul className="space-y-1.5">
-                          {order.items.map((item) => (
-                            <li key={`${order.id}-${item.name}`} className="flex items-center justify-between gap-3 text-sm">
-                              <span className="text-black/80 dark:text-white/85">{item.name}</span>
-                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/15 text-black/70 dark:text-white/70">
-                                x{item.qty}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="space-y-3">
+                         <div className="w-full h-4 bg-black/10 dark:bg-white/10 rounded"></div>
+                         <div className="w-full h-4 bg-black/10 dark:bg-white/10 rounded"></div>
                       </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-2.5">
-                        <button
-                          onClick={() => closeOrder(order, "completed")}
-                          className="h-9 rounded-lg border border-green-600/30 bg-green-600/15 text-green-700 dark:text-green-300 text-[10px] uppercase tracking-[0.14em] font-bold hover:bg-green-600/25 transition-colors"
-                        >
-                          Complete
-                        </button>
-                        <button
-                          onClick={() => closeOrder(order, "cancelled")}
-                          className="h-9 rounded-lg border border-red-600/30 bg-red-600/15 text-red-700 dark:text-red-300 text-[10px] uppercase tracking-[0.14em] font-bold hover:bg-red-600/25 transition-colors"
-                        >
-                          Cancel
-                        </button>
+                      <div className="mt-5 grid grid-cols-2 gap-2.5">
+                         <div className="h-9 rounded-lg bg-black/10 dark:bg-white/10"></div>
+                         <div className="h-9 rounded-lg bg-black/10 dark:bg-white/10"></div>
                       </div>
                     </article>
                   ))}
+                </div>
+              ) : sortedActiveOrders.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+                  {sortedActiveOrders.map((order, index) => {
+                    const pendingCount = order.items.filter(i => i.status === "pending").length;
+                    
+                    const orderSubtotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                    // ✅ Calculate dynamically 
+                    const orderGst = Math.round(orderSubtotal * (gstRate / 100));
+
+                    return (
+                      <article
+                        key={order.id}
+                        className={`bg-glass border rounded-xl p-4 sm:p-5 shadow-sm transition-all duration-300 ${
+                          pendingCount === 0 
+                            ? "border-green-500/30 dark:border-green-400/30" 
+                            : "border-black/10 dark:border-white/10"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-gold font-bold">Queue #{index + 1}</p>
+                            <p className="text-sm sm:text-base font-bold tracking-wide text-black dark:text-white mt-1">{order.id}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Table</p>
+                            <p className="text-lg sm:text-xl font-bold text-black dark:text-white">{order.tableNumber}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 space-y-1 text-xs text-black/65 dark:text-white/65">
+                          <p>Guest: <span className="text-black dark:text-white">{order.guestName}</span></p>
+                          <p>Table Seated: <span className="text-black dark:text-white">{formatTime(order.createdAt)}</span></p>
+                          
+                          <div className="pt-1.5 pb-0.5">
+                             <p>Subtotal: <span className="font-bold text-black dark:text-white">₹{orderSubtotal}</span></p>
+                             {/* ✅ Dynamically shows the rate */}
+                             <p>GST ({gstRate}%): <span className="font-bold text-black dark:text-white">₹{orderGst}</span></p>
+                             <p className="mt-0.5">Total Bill: <span className="text-gold font-bold text-sm">₹{order.total}</span></p>
+                          </div>
+
+                          {order.generalNote ? (
+                            <p className="text-amber-700 dark:text-amber-300 bg-amber-500/10 p-2 rounded mt-1">
+                              Note: {order.generalNote}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-3.5 border-t border-black/10 dark:border-white/10 pt-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Order Items</p>
+                            {pendingCount === 0 && order.items.length > 0 && (
+                              <span className="text-[9px] uppercase tracking-widest text-green-600 dark:text-green-400 font-bold">
+                                All Served
+                              </span>
+                            )}
+                          </div>
+                          
+                          <ul className="space-y-1">
+                            {[...order.items].sort((a, b) => (a.status === "pending" ? -1 : 1)).map((item) => (
+                              <li 
+                                key={`${order.id}-${item.id}`} 
+                                className={`flex items-center justify-between gap-3 text-sm p-1.5 -mx-1.5 rounded-md transition-colors ${
+                                  item.status === 'served' 
+                                    ? 'bg-black/5 dark:bg-white/5 opacity-50' 
+                                    : 'hover:bg-black/5 dark:hover:bg-white/5'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <button 
+                                    onClick={() => toggleItemStatus(order.id, item.id, item.status)}
+                                    className={`shrink-0 w-4 h-4 rounded-sm border flex items-center justify-center transition-all ${
+                                      item.status === 'served' 
+                                        ? 'bg-green-500 border-green-500 text-white' 
+                                        : 'border-black/30 dark:border-white/30 text-transparent hover:border-black/50 dark:hover:border-white/50'
+                                    }`}
+                                  >
+                                    <Check size={12} strokeWidth={3} />
+                                  </button>
+                                  
+                                  <div className="flex flex-col">
+                                    <span className={`text-black/80 dark:text-white/85 transition-all ${item.status === 'served' ? 'line-through' : ''}`}>
+                                      {item.name}
+                                    </span>
+                                    {item.note && (
+                                      <span className={`text-[10px] text-amber-600 block leading-tight ${item.status === 'served' ? 'line-through' : ''}`}>
+                                        ({item.note})
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {item.status === "pending" && (
+                                    <span className="text-[9px] text-amber-600/80 dark:text-amber-400/80 hidden sm:block">
+                                      {minutesSince(item.createdAt)}m
+                                    </span>
+                                  )}
+                                  <span className={`text-[11px] px-2 py-0.5 rounded-full border text-black/70 dark:text-white/70 ${
+                                    item.status === 'served' 
+                                      ? 'bg-transparent border-black/10 dark:border-white/10' 
+                                      : 'bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/15'
+                                  }`}>
+                                    x{item.quantity}
+                                  </span>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-2.5">
+                          <button
+                            onClick={() => openPaymentModal(order)}
+                            className="h-9 rounded-lg border border-green-600/30 bg-green-600/15 text-green-700 dark:text-green-300 text-[10px] uppercase tracking-[0.14em] font-bold hover:bg-green-600/25 transition-colors cursor-pointer"
+                          >
+                            Close Table
+                          </button>
+                          <button
+                            onClick={() => closeOrder(order, "cancelled")}
+                            className="h-9 rounded-lg border border-red-600/30 bg-red-600/15 text-red-700 dark:text-red-300 text-[10px] uppercase tracking-[0.14em] font-bold hover:bg-red-600/25 transition-colors cursor-pointer"
+                          >
+                            Cancel Table
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-7 text-center text-sm text-black/60 dark:text-white/60">
@@ -384,8 +525,16 @@ function ChefContent() {
                           className="rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-3"
                         >
                           <div className="flex items-center justify-between gap-2 text-xs">
-                            <span className="font-bold text-black dark:text-white">{order.id}</span>
-                            <span className="text-black/60 dark:text-white/60">Table {order.tableNumber}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-black dark:text-white">{order.id}</span>
+                              <span className="text-black/60 dark:text-white/60">| Table {order.tableNumber}</span>
+                            </div>
+                            <button 
+                              onClick={() => restoreOrder(order)}
+                              className="text-[9px] uppercase tracking-widest text-gold hover:text-amber-500 transition-colors font-bold cursor-pointer"
+                            >
+                              Restore
+                            </button>
                           </div>
                           <div className="mt-1 text-[11px] text-black/60 dark:text-white/60">
                             Completed at {formatTime(order.closedAt)}
@@ -416,8 +565,16 @@ function ChefContent() {
                           className="rounded-lg border border-red-600/20 bg-red-600/10 p-3"
                         >
                           <div className="flex items-center justify-between gap-2 text-xs">
-                            <span className="font-bold text-black dark:text-white">{order.id}</span>
-                            <span className="text-black/60 dark:text-white/60">Table {order.tableNumber}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-black dark:text-white">{order.id}</span>
+                              <span className="text-black/60 dark:text-white/60">| Table {order.tableNumber}</span>
+                            </div>
+                            <button 
+                              onClick={() => restoreOrder(order)}
+                              className="text-[9px] uppercase tracking-widest text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors font-bold cursor-pointer"
+                            >
+                              Restore
+                            </button>
                           </div>
                           <div className="mt-1 text-[11px] text-black/60 dark:text-white/60">
                             Cancelled at {formatTime(order.closedAt)}
@@ -517,6 +674,139 @@ function ChefContent() {
           )}
         </div>
       </main>
+
+      {/* ✅ PAYMENT MODAL OVERLAY */}
+      {paymentOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-2xl relative">
+            <button 
+              onClick={() => setPaymentOrder(null)} 
+              className="absolute top-4 right-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            
+            <div className="mb-6 mt-2">
+               <h3 className="text-xl font-serif italic text-black dark:text-white">Checkout Table {paymentOrder.tableNumber}</h3>
+               <p className="text-xs text-black/50 dark:text-white/50 font-light mt-1">
+                  Guest: {paymentOrder.guestName}
+               </p>
+               
+               {/* ✅ Dynamically calculated modal breakdown */}
+               {(() => {
+                  const modalSub = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+                  const modalGst = Math.round(modalSub * (gstRate / 100));
+                  return (
+                    <div className="flex items-center gap-3 mt-3 text-[11px] uppercase tracking-widest text-black/70 dark:text-white/70">
+                       <p>Sub: ₹{modalSub}</p>
+                       <p>GST: ₹{modalGst}</p>
+                       <p className="font-bold text-gold text-sm ml-auto">Total: ₹{paymentOrder.total}</p>
+                    </div>
+                  );
+               })()}
+            </div>
+
+            {/* Payment Tabs */}
+            <div className="flex bg-black/5 dark:bg-white/5 rounded-xl p-1 mb-5">
+              <button
+                onClick={() => setPaymentTab("whatsapp")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                  paymentTab === "whatsapp" 
+                    ? "bg-green-500 text-white shadow-sm" 
+                    : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                <MessageCircle size={14} /> WhatsApp
+              </button>
+              <button
+                onClick={() => setPaymentTab("email")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                  paymentTab === "email" 
+                    ? "bg-blue-500 text-white shadow-sm" 
+                    : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                <Mail size={14} /> Email
+              </button>
+              <button
+                onClick={() => setPaymentTab("external")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                  paymentTab === "external" 
+                    ? "bg-gold text-white shadow-sm" 
+                    : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
+                }`}
+              >
+                <Banknote size={14} /> Cash/Card
+              </button>
+            </div>
+
+            {/* Tab Contents */}
+            <div className="space-y-4">
+              {paymentTab === "whatsapp" && (
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 ml-1">
+                     WhatsApp Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={paymentPhone}
+                    onChange={(e) => setPaymentPhone(e.target.value)}
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-green-500 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
+                    placeholder="Enter phone number"
+                  />
+                  <button 
+                    onClick={handleWhatsAppSend}
+                    disabled={!paymentPhone}
+                    className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-bold uppercase tracking-[0.1em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2"
+                  >
+                    Send Bill & Close Table
+                  </button>
+                </div>
+              )}
+
+              {paymentTab === "email" && (
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 ml-1">
+                     Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={paymentEmail}
+                    onChange={(e) => setPaymentEmail(e.target.value)}
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-blue-500 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
+                    placeholder="Enter email address"
+                  />
+                  <button 
+                    onClick={handleEmailSend}
+                    disabled={!paymentEmail}
+                    className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white font-bold uppercase tracking-[0.1em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2"
+                  >
+                    Send Receipt & Close Table
+                  </button>
+                </div>
+              )}
+
+              {paymentTab === "external" && (
+                <div className="space-y-4 pt-2">
+                  <div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-black/10 dark:border-white/10 text-center">
+                    <p className="text-sm text-black/70 dark:text-white/70">
+                      Use this if the customer has already paid at the counter via Cash or Card POS machine.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => closeOrder(paymentOrder, "completed")}
+                    className="w-full bg-gold hover:bg-gold/90 text-white font-bold uppercase tracking-[0.1em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2"
+                  >
+                    Mark as Paid & Close Table
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
