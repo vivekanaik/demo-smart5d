@@ -5,7 +5,6 @@ import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import {
   BarChart3,
-  ChefHat,
   CheckCircle2,
   Clock3,
   ReceiptText,
@@ -18,12 +17,14 @@ import {
   MessageCircle,
   Mail,
   Banknote,
-  X
+  X,
 } from "lucide-react";
-
+import { getAnalytics } from "@/actions/analytics";
 import { getActiveOrders, updateOrderStatus, updateOrderItemStatus } from "@/actions/orders";
-import { getSettings } from "@/actions/settings"; // ✅ NEW IMPORT
+import { getSettings } from "@/actions/settings"; 
+import ChefHeader from "@/components/ChefHeader";
 
+// --- Types ---
 type OrderItem = {
   id: number;
   name: string;
@@ -54,43 +55,8 @@ type AnalyticsWindow = "daily" | "weekly" | "monthly" | "yearly";
 type OrderView = "all" | "active" | "previous" | "cancelled";
 type DashboardView = "orders" | "analytics";
 
-const ANALYTICS_DATA: Record<
-  AnalyticsWindow,
-  {
-    revenue: string;
-    completedOrders: number;
-    cancelledOrders: number;
-    avgPrepMinutes: number;
-    occupancyRate: string;
-    popularDish: string;
-  }
-> = {
-  daily: { revenue: "₹38,420", completedOrders: 86, cancelledOrders: 4, avgPrepMinutes: 18, occupancyRate: "74%", popularDish: "Truffle Mushroom Pizza" },
-  weekly: { revenue: "₹2,61,300", completedOrders: 578, cancelledOrders: 21, avgPrepMinutes: 19, occupancyRate: "79%", popularDish: "Spicy Veg Ramen" },
-  monthly: { revenue: "₹10,82,900", completedOrders: 2410, cancelledOrders: 96, avgPrepMinutes: 20, occupancyRate: "82%", popularDish: "Classic Veggie Burger" },
-  yearly: { revenue: "₹1,34,48,600", completedOrders: 29172, cancelledOrders: 1183, avgPrepMinutes: 21, occupancyRate: "80%", popularDish: "Truffle Mushroom Pizza" },
-};
 
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-
-  return (
-    <button
-      onClick={toggleTheme}
-      className="relative flex items-center w-12 h-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full backdrop-blur-xl cursor-pointer transition-colors duration-500 hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none"
-      aria-label="Toggle theme"
-    >
-      <div
-        className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-sm ${
-          theme === "light" ? "translate-x-0 bg-black" : "translate-x-6 bg-white"
-        }`}
-      >
-        <div className={`w-1.5 h-1.5 rounded-full ${theme === "light" ? "bg-white" : "bg-black"}`}></div>
-      </div>
-    </button>
-  );
-}
-
+// --- Components ---
 function formatTime(dateVal: string | Date) {
   return new Date(dateVal).toLocaleTimeString("en-IN", {
     hour: "2-digit",
@@ -104,9 +70,9 @@ function minutesSince(dateVal: string | Date) {
 }
 
 function ChefContent() {
-  // ✅ FETCH SETTINGS TO GET LIVE GST RATE
+  
   const { data: settings } = useSWR("settings", getSettings);
-  const gstRate = settings?.gstRate ?? 5; // Default 5% if not loaded
+  const gstRate = settings?.gstRate ?? 5; 
 
   const [dashboardView, setDashboardView] = useState<DashboardView>("orders");
   const [orderView, setOrderView] = useState<OrderView>("all");
@@ -119,6 +85,18 @@ function ChefContent() {
   const [paymentTab, setPaymentTab] = useState<"whatsapp" | "email" | "external">("whatsapp");
   const [paymentPhone, setPaymentPhone] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
+  
+  const { data: currentAnalytics, isLoading: isAnalyticsLoading } = useSWR(
+    ["analytics", analyticsWindow],
+    ([_, window]) => getAnalytics(window as AnalyticsWindow),
+    { 
+      // Refresh analytics every 30 seconds to keep the dashboard feeling "live"
+      refreshInterval: 30000, 
+      fallbackData: {
+        revenue: "₹...", completedOrders: 0, cancelledOrders: 0, avgPrepMinutes: 0, occupancyRate: "...", popularDish: "..."
+      }
+    }
+  );
 
   const { data: activeOrders = [], mutate, isLoading } = useSWR<ActiveOrder[]>(
     "activeOrders",
@@ -131,7 +109,6 @@ function ChefContent() {
     [activeOrders],
   );
 
-  const currentAnalytics = ANALYTICS_DATA[analyticsWindow];
   const ordersHeading =
     orderView === "all"
       ? "All Orders"
@@ -218,7 +195,6 @@ function ChefContent() {
     
     const itemsText = paymentOrder.items.map(i => `- ${i.name} x${i.quantity}`).join("%0A");
     const subtotal = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    // ✅ Calculate Dynamic GST
     const gstAmount = Math.round(subtotal * (gstRate / 100));
     const upiLink = `upi://pay?pa=merchant@upi&pn=The%20Obsidian%20Palace&am=${paymentOrder.total}&cu=INR`;
     
@@ -233,7 +209,6 @@ function ChefContent() {
     
     const itemsText = paymentOrder.items.map(i => `- ${i.name} x${i.quantity}`).join("%0D%0A");
     const subtotal = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    // ✅ Calculate Dynamic GST
     const gstAmount = Math.round(subtotal * (gstRate / 100));
     const upiLink = `upi://pay?pa=merchant@upi&pn=The%20Obsidian%20Palace&am=${paymentOrder.total}&cu=INR`;
     
@@ -246,28 +221,7 @@ function ChefContent() {
 
   return (
     <div className="flex flex-col min-h-screen relative">
-      <header className="h-16 flex items-center justify-between px-4 sm:px-10 border-b border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40 backdrop-blur-md sticky top-0 z-50 transition-colors duration-500">
-        <div className="flex items-center space-x-2 sm:space-x-4">
-          <span className="uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[10px] sm:text-xs font-bold text-black dark:text-white">
-            The Obsidian Palace
-          </span>
-          <span className="text-black/20 dark:text-white/20">|</span>
-          <span className="uppercase tracking-[0.1em] text-[8px] sm:text-[10px] text-black/60 dark:text-white/60">
-            Chef Console
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 sm:gap-4">
-          <a href="/chef/settings" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60 hover:text-gold transition">
-            Settings
-          </a>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60">
-            <ChefHat size={12} />
-            Admin
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
+      <ChefHeader subtitle="Chef Console" />
 
       <section className="w-full px-4 sm:px-10 pt-5 pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
@@ -368,17 +322,16 @@ function ChefContent() {
               ) : sortedActiveOrders.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
                   {sortedActiveOrders.map((order, index) => {
-                    const pendingCount = order.items.filter(i => i.status === "pending").length;
+                    const pendingOrderCount = order.items.filter(i => i.status === "pending").length;
                     
                     const orderSubtotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-                    // ✅ Calculate dynamically 
                     const orderGst = Math.round(orderSubtotal * (gstRate / 100));
 
                     return (
                       <article
                         key={order.id}
                         className={`bg-glass border rounded-xl p-4 sm:p-5 shadow-sm transition-all duration-300 ${
-                          pendingCount === 0 
+                          pendingOrderCount === 0 
                             ? "border-green-500/30 dark:border-green-400/30" 
                             : "border-black/10 dark:border-white/10"
                         }`}
@@ -400,7 +353,6 @@ function ChefContent() {
                           
                           <div className="pt-1.5 pb-0.5">
                              <p>Subtotal: <span className="font-bold text-black dark:text-white">₹{orderSubtotal}</span></p>
-                             {/* ✅ Dynamically shows the rate */}
                              <p>GST ({gstRate}%): <span className="font-bold text-black dark:text-white">₹{orderGst}</span></p>
                              <p className="mt-0.5">Total Bill: <span className="text-gold font-bold text-sm">₹{order.total}</span></p>
                           </div>
@@ -415,7 +367,7 @@ function ChefContent() {
                         <div className="mt-3.5 border-t border-black/10 dark:border-white/10 pt-3">
                           <div className="flex justify-between items-center mb-2">
                             <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Order Items</p>
-                            {pendingCount === 0 && order.items.length > 0 && (
+                            {pendingOrderCount === 0 && order.items.length > 0 && (
                               <span className="text-[9px] uppercase tracking-widest text-green-600 dark:text-green-400 font-bold">
                                 All Served
                               </span>
@@ -591,7 +543,9 @@ function ChefContent() {
           {dashboardView === "analytics" && (
             <section className="space-y-5">
               <div className="flex justify-end">
-                <div className="grid grid-cols-2 sm:flex gap-2">
+                
+
+              <div className="grid grid-cols-2 sm:flex gap-2">
                   {(["daily", "weekly", "monthly", "yearly"] as const).map((window) => (
                     <button
                       key={window}
@@ -608,7 +562,8 @@ function ChefContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {/* Add a subtle pulse effect while loading new time windows */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 transition-opacity duration-300 ${isAnalyticsLoading ? "opacity-60" : "opacity-100"}`}>
                 <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
                   <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Revenue</p>
                   <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.revenue}</p>
@@ -651,7 +606,9 @@ function ChefContent() {
                     <Layers size={14} />
                     <p className="text-[10px] uppercase tracking-widest">Most Ordered</p>
                   </div>
-                  <p className="mt-2 text-lg sm:text-xl font-bold text-black dark:text-white">{currentAnalytics.popularDish}</p>
+                  <p className="mt-2 text-lg sm:text-xl font-bold text-black dark:text-white truncate" title={currentAnalytics.popularDish}>
+                    {currentAnalytics.popularDish}
+                  </p>
                 </article>
               </div>
 
@@ -675,7 +632,7 @@ function ChefContent() {
         </div>
       </main>
 
-      {/* ✅ PAYMENT MODAL OVERLAY */}
+      {/* PAYMENT MODAL OVERLAY */}
       {paymentOrder && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-2xl relative">
@@ -692,7 +649,6 @@ function ChefContent() {
                   Guest: {paymentOrder.guestName}
                </p>
                
-               {/* ✅ Dynamically calculated modal breakdown */}
                {(() => {
                   const modalSub = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
                   const modalGst = Math.round(modalSub * (gstRate / 100));

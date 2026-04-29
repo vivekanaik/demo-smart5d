@@ -1,14 +1,19 @@
+// page.tsx
 "use client";
 
 import React, { useState } from "react";
 import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
-import { Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X } from "lucide-react";
+import { 
+  Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, 
+  LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X, CheckCircle2 
+} from "lucide-react";
 import { IoSearch } from "react-icons/io5";
 import { RiBowlLine } from "react-icons/ri";
 import { submitOrder } from "@/actions/orders"; 
-import { getMenuItems, getSettings } from "@/actions/settings"; // ✅ NEW IMPORTS
+import { getMenuItems, getSettings } from "@/actions/settings"; 
+import { createServiceRequest } from "@/actions/requests"; // ✅ Updated Import
 
 // ✅ Offset Dummy IDs to 1001+ to avoid clashing with DB items which start at 1
 const MENU_ITEMS = [
@@ -266,7 +271,7 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
                                 { label: 'Carbs', value: item.nutrition.carbs },
                                 { label: 'Fat', value: item.nutrition.fat }
                               ].map((nut, idx) => (
-                                <div key={idx} className="flex flex-col items-center justify-center p-1.5 border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 rounded-sm">
+                                <div key={idx} className="flex flex-col items-center justify-center p-1.5 border border-black/5 dark:bg-white/5 bg-black/5 dark:bg-white/5 rounded-sm">
                                     <span className="text-[8px] text-black/40 dark:text-white/40 uppercase tracking-wider mb-0.5">{nut.label}</span>
                                     <span className="text-[10px] md:text-[11px] font-bold text-black/80 dark:text-white/80">{nut.value || '-'}</span>
                                 </div>
@@ -368,14 +373,11 @@ function Footer() {
 }
 
 export default function SmartMenuPage() {
-  // ✅ FETCH DYNAMIC DATA
   const { data: dbMenuItems = [] } = useSWR("menuItems", getMenuItems);
   const { data: dbSettings } = useSWR("settings", getSettings);
 
-  // ✅ Combine DB items with Dummy Items
   const ALL_MENU_ITEMS = [...MENU_ITEMS, ...dbMenuItems];
   
-  // ✅ Extract Dynamic GST Rate (Defaults to 5 if not loaded)
   const currentGstRate = dbSettings?.gstRate ?? 5;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -394,8 +396,11 @@ export default function SmartMenuPage() {
   const [fallbackItem, setFallbackItem] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   
+  // ✅ Waiter Modal States
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
+  const [waiterStep, setWaiterStep] = useState<'form' | 'success'>('form');
   const [tableNumber, setTableNumber] = useState('');
+  const [isCallingWaiter, setIsCallingWaiter] = useState(false);
   
   const [cart, setCart] = useState<Record<number, number>>({});
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -411,7 +416,6 @@ export default function SmartMenuPage() {
   
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
   
-  // Map against ALL_MENU_ITEMS
   const cartItems = ALL_MENU_ITEMS.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
     ...item,
     quantity: cart[item.id],
@@ -419,8 +423,6 @@ export default function SmartMenuPage() {
   }));
   
   const cartSubtotal = cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0);
-  
-  // ✅ Calculate GST Dynamically based on Settings
   const gstAmount = Math.round(cartSubtotal * (currentGstRate / 100)); 
   const cartGrandTotal = cartSubtotal + gstAmount;
 
@@ -516,11 +518,35 @@ export default function SmartMenuPage() {
     setIsSubmitting(false);
   };
 
+  const closeWaiterModal = () => {
+    setIsWaiterModalOpen(false);
+    setTimeout(() => {
+      setTableNumber('');
+      setWaiterStep('form');
+    }, 300); // Give time for transition
+  };
+
+  // ✅ Updated to call createServiceRequest instead of createWaiterRequest
+  const handleCallWaiter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tableNumber) return;
+    
+    setIsCallingWaiter(true);
+    try {
+      await createServiceRequest(Number(tableNumber)); // ✅ FIXED
+      setWaiterStep('success'); 
+    } catch (error) {
+      console.error(error);
+      alert("Failed to call waiter. Please try again.");
+    } finally {
+      setIsCallingWaiter(false);
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [dietFilter, setDietFilter] = useState<'All' | 'Veg' | 'Non-Veg'>('All');
   const [viewLayout, setViewLayout] = useState<'list' | 'grid'>('list');
 
-  // Filter against ALL_MENU_ITEMS
   const filteredItems = ALL_MENU_ITEMS.filter(item => {
     const matchCategory = activeCategory === 'All' || item.category === activeCategory;
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -666,58 +692,76 @@ export default function SmartMenuPage() {
         </div>
       </button>
 
+      {/* ✅ Waiter Modal with Success Step */}
       {isWaiterModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-2xl relative">
             <button 
-              onClick={() => setIsWaiterModalOpen(false)} 
+              onClick={closeWaiterModal} 
               className="absolute top-4 right-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
-            
-            <div className="flex flex-col items-center text-center space-y-4 mb-6 mt-2">
-               <div className="p-3 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gold">
-                   <User size={24} />
-               </div>
-               <div>
-                 <h3 className="text-xl font-serif italic text-black dark:text-white">Call the Waiter</h3>
-                 <p className="text-xs text-black/50 dark:text-white/50 font-light mt-1 w-4/5 mx-auto">
-                    Please enter your table number and we will be right there to assist you.
-                 </p>
-               </div>
-            </div>
 
-            <form 
-               onSubmit={(e) => { 
-                 e.preventDefault(); 
-                 setIsWaiterModalOpen(false); 
-                 setTableNumber('');
-               }}
-            >
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1.5 ml-1">
-                     Table Number
-                  </label>
-                  <input
-                    type="number"
-                    value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
-                    required
-                    min="1"
-                    className="no-spinners w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-gold text-black dark:text-white transition-colors placeholder:text-black/30 dark:placeholder:text-white/30"
-                    placeholder="e.g. 12"
-                  />
+            {waiterStep === 'form' ? (
+              <>
+                <div className="flex flex-col items-center text-center space-y-4 mb-6 mt-2">
+                   <div className="p-3 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gold">
+                       <User size={24} />
+                   </div>
+                   <div>
+                     <h3 className="text-xl font-serif italic text-black dark:text-white">Call the Waiter</h3>
+                     <p className="text-xs text-black/50 dark:text-white/50 font-light mt-1 w-4/5 mx-auto">
+                        Please enter your table number and we will be right there to assist you.
+                     </p>
+                   </div>
                 </div>
-                <button 
-                  type="submit" 
-                  className="w-full bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2"
+
+                <form onSubmit={handleCallWaiter}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1.5 ml-1">
+                         Table Number
+                      </label>
+                      <input
+                        type="number"
+                        value={tableNumber}
+                        onChange={(e) => setTableNumber(e.target.value)}
+                        required
+                        min="1"
+                        className="no-spinners w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-gold text-black dark:text-white transition-colors placeholder:text-black/30 dark:placeholder:text-white/30"
+                        placeholder="e.g. 12"
+                      />
+                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={isCallingWaiter}
+                      className="w-full bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isCallingWaiter ? "Calling..." : "Request Waiter"}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <div className="flex flex-col items-center text-center space-y-4 my-6">
+                <div className="p-4 rounded-full bg-green-500/10 text-green-500 animate-in zoom-in duration-300">
+                  <CheckCircle2 size={36} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-serif italic text-black dark:text-white">Request Sent!</h3>
+                  <p className="text-sm text-black/60 dark:text-white/60 font-light mt-2">
+                    A waiter is on their way to <strong className="text-gold">Table {tableNumber}</strong>.
+                  </p>
+                </div>
+                <button
+                  onClick={closeWaiterModal}
+                  className="w-full bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-3 rounded-xl transition-all shadow-md cursor-pointer mt-6"
                 >
-                  Request Waiter
+                  Close
                 </button>
               </div>
-            </form>
+            )}
           </div>
         </div>
       )}
@@ -823,7 +867,6 @@ export default function SmartMenuPage() {
                         <p className="text-sm font-serif text-black dark:text-white">₹{cartSubtotal}</p>
                       </div>
                       <div className="flex items-center justify-between">
-                        {/* ✅ Dynamically shows the rate */}
                         <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">GST ({currentGstRate}%)</p>
                         <p className="text-sm font-serif text-black dark:text-white">₹{gstAmount}</p>
                       </div>
@@ -930,7 +973,6 @@ export default function SmartMenuPage() {
                   <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                     {orderHistory.map((order, index) => {
                       const histSubtotal = order.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-                      // ✅ Dynamically calculates history breakdown
                       const histGst = Math.round(histSubtotal * (currentGstRate / 100));
 
                       return (

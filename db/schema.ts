@@ -56,3 +56,10 @@ export const settings = pgTable("settings", {
     gstRate: integer("gst_rate").default(5).notNull(), // 0, 5, or 18
     adminPassword: varchar("admin_password", { length: 255 }).default("admin123").notNull(), 
 });
+
+export const serviceRequests = pgTable('service_requests', {
+    id: serial('id').primaryKey(),
+    tableNumber: integer('table_number').notNull(),
+    status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending' or 'resolved'
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
