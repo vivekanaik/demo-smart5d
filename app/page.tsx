@@ -15,6 +15,18 @@ import { submitOrder } from "@/actions/orders";
 import { getMenuItems, getSettings } from "@/actions/settings"; 
 import { createServiceRequest } from "@/actions/requests"; // ✅ Updated Import
 
+const MODELS_BASE_URL = process.env.NEXT_PUBLIC_MODELS_BASE_URL?.trim();
+
+function resolveModelUrl(modelPath: string) {
+  if (!modelPath) return modelPath;
+  if (/^https?:\/\//i.test(modelPath)) return modelPath;
+
+  const normalizedPath = modelPath.replace(/^\/+/, "");
+  if (!MODELS_BASE_URL) return `/${normalizedPath}`;
+
+  return `${MODELS_BASE_URL.replace(/\/+$/, "")}/${normalizedPath}`;
+}
+
 // ✅ Offset Dummy IDs to 1001+ to avoid clashing with DB items which start at 1
 const MENU_ITEMS = [
   {
@@ -26,8 +38,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Pizza Dough", "Mozzarella", "Mushrooms", "Truffle Oil", "Garlic", "Basil"],
     nutrition: { calories: "420 kcal", protein: "14g", carbs: "48g", fat: "18g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "mushroompizza-3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/pizza.webp"
   },
   {
     id: 1002,
@@ -38,8 +50,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Burger Bun", "Veg Patty", "Lettuce", "Tomato", "Cheese Slice", "Mayonnaise"],
     nutrition: { calories: "380 kcal", protein: "10g", carbs: "42g", fat: "16g" },
-    modelUrl: "https://raw.githubusercontent.com/code4fukui/vr-crafeat/main/kani-burger.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "hamburger3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/burger.webp"
   },
   {
     id: 1003,
@@ -50,8 +62,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Ramen Noodles", "Tofu", "Corn", "Mushrooms", "Vegetable Broth", "Chili Oil"],
     nutrition: { calories: "460 kcal", protein: "18g", carbs: "58g", fat: "14g" },
-    modelUrl: "https://raw.githubusercontent.com/code4mongolia/opendata-gourmet/main/haku-yakiudon.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "pastadish-3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/ramen.webp"
   },
   {
     id: 1004,
@@ -62,8 +74,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Noodles", "Paneer", "Basil Pesto Sauce", "Capsicum", "Onion", "Cherry Tomatoes", "Olive Oil", "Garlic", "Chili Flakes"],
     nutrition: { calories: "480 kcal", protein: "18g", carbs: "58g", fat: "18g" },
-    modelUrl: "https://raw.githubusercontent.com/code4mongolia/opendata-gourmet/main/newmnkosen-lunch1.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "pastadish-3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/pasta.webp"
   },
   {
     id: 1005,
@@ -74,8 +86,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Bread", "Boiled Potato", "Cucumber", "Tomato", "Onion", "Capsicum", "Mint Chutney", "Butter", "Cheese", "Chaat Masala"],
     nutrition: { calories: "350 kcal", protein: "10g", carbs: "45g", fat: "14g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "sandwich3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/sandwich.webp"
   },
   {
     id: 1006,
@@ -86,8 +98,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Mixed Greens", "Feta Cheese", "Olives", "Cucumber", "Cherry Tomatoes", "Vinaigrette"],
     nutrition: { calories: "210 kcal", protein: "8g", carbs: "12g", fat: "16g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "vegetablesalad-3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/bowl.webp"
   },
   {
     id: 1007,
@@ -98,8 +110,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Sourdough", "Butter", "Garlic", "Parsley", "Sea Salt"],
     nutrition: { calories: "320 kcal", protein: "6g", carbs: "45g", fat: "12g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Avocado/glTF-Binary/Avocado.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "garlicbread-3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/bread.webp"
   },
   {
     id: 1008,
@@ -110,8 +122,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Dark Chocolate", "Flour", "Butter", "Eggs", "Sugar", "Gold Crumbs"],
     nutrition: { calories: "580 kcal", protein: "8g", carbs: "52g", fat: "35g" },
-    modelUrl: "https://raw.githubusercontent.com/code4fukui/ar-handtrack-torus/main/cake.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "chocolatelava-cake-3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/lava-cake.webp"
   },
   {
     id: 1009,
@@ -122,8 +134,8 @@ const MENU_ITEMS = [
     diet: "Veg",
     ingredients: ["Blue Curaçao Syrup", "Mint", "Lime", "Sparkling Water", "Ice"],
     nutrition: { calories: "140 kcal", protein: "0g", carbs: "35g", fat: "0g" },
-    modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/WaterBottle/glTF-Binary/WaterBottle.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "bluecocktail-3d-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/drink.webp"
   },
   {
     id: 1010,
@@ -134,8 +146,8 @@ const MENU_ITEMS = [
     diet: "Non-Veg",
     ingredients: ["Chicken Breast", "Yogurt", "Tikka Masala", "Lemon Juice", "Garlic", "Ginger"],
     nutrition: { calories: "280 kcal", protein: "35g", carbs: "8g", fat: "12g" },
-    modelUrl: "https://raw.githubusercontent.com/code4fukui/vr-crafeat/main/shishiniku.glb",
-    posterUrl: "/5d.png"
+    modelUrl: "grilled-kebab-model-v1.glb",
+    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/skewer.webp"
   }
 ];
 
@@ -217,7 +229,7 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
         <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"></div>
         <ModelViewer 
             id={`viewer-${item.id}`} 
-            src={item.modelUrl} 
+            src={resolveModelUrl(item.modelUrl)} 
             alt={item.name} 
             poster={item.posterUrl} 
             ingredients={item.ingredients} 
@@ -1055,7 +1067,7 @@ export default function SmartMenuPage() {
           <div className="w-full h-full max-h-screen">
             <ModelViewer 
                id={`fallback-viewer-${fallbackItem.id}`} 
-               src={fallbackItem.modelUrl} 
+               src={resolveModelUrl(fallbackItem.modelUrl)} 
                alt={fallbackItem.name} 
                ingredients={fallbackItem.ingredients}
                nutrition={fallbackItem.nutrition}

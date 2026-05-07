@@ -47,7 +47,7 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
     return (
       <div className="w-full h-full bg-black/5 dark:bg-white/5 overflow-hidden relative flex items-center justify-center">
         {poster ? (
-          <img src={poster} alt={alt} className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale transition-opacity" />
+          <img src={poster} alt={alt} className="absolute inset-0 w-full h-full object-contain object-center opacity-100 transition-opacity" />
         ) : (
           <span className="text-[10px] font-semibold tracking-widest uppercase text-black/50 dark:text-white/50 animate-pulse text-center">
             {alt} 3D<br/>Loading...
@@ -82,7 +82,7 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
         <>
           <div slot="poster" className="absolute inset-0 flex flex-col items-center justify-center bg-black/5 dark:bg-white/5">
             {poster ? (
-              <img src={poster} alt={alt} className="absolute inset-0 w-full h-full object-cover" />
+              <img src={poster} alt={alt} className="absolute inset-0 w-full h-full object-contain object-center" />
             ) : (
                <span className="text-[10px] font-semibold tracking-widest uppercase text-black/50 dark:text-white/50 animate-pulse z-10 relative text-center">
                  {alt} 3D<br/>Loading...
