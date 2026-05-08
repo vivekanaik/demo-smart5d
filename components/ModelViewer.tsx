@@ -42,7 +42,7 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           observer.disconnect();
         }
       },
-      { rootMargin: "220px" }
+      { rootMargin: "800px" }
     );
 
     observer.observe(container);
@@ -99,13 +99,13 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           alt,
           poster,
           'camera-controls': true,
-          'auto-rotate': showInteractiveUI ? true : undefined,
+          'auto-rotate': true,
           'interaction-prompt': 'none',
-          loading: 'lazy',
+          loading: 'eager',
           ar: true,
           'ar-modes': 'webxr scene-viewer quick-look',
           'ar-placement': 'floor',
-          'ar-scale': 'auto',
+          'ar-scale': 'fixed',
           'camera-orbit': '0deg 75deg auto',
           reveal: 'auto',
           className: "w-full h-full bg-transparent outline-none",
