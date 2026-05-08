@@ -14,8 +14,10 @@ interface ModelViewerProps {
 
 export default function ModelViewer({ src, alt, poster, id, ingredients, nutrition, showInteractiveUI }: ModelViewerProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [shouldLoadModel, setShouldLoadModel] = useState(false);
   const [isArActive, setIsArActive] = useState(false);
   const [activeTab, setActiveTab] = useState<'ingredients' | 'nutrition' | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
 
   useEffect(() => {
@@ -23,6 +25,29 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
       setIsMounted(true);
     }).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (showInteractiveUI) {
+      setShouldLoadModel(true);
+      return;
+    }
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoadModel(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "220px" }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [showInteractiveUI]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -43,11 +68,17 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
 
   const showUI = showInteractiveUI || isArActive;
 
-  if (!isMounted) {
+  if (!isMounted || !shouldLoadModel) {
     return (
-      <div className="w-full h-full bg-black/5 dark:bg-white/5 overflow-hidden relative flex items-center justify-center">
+      <div ref={containerRef} className="w-full h-full bg-black/5 dark:bg-white/5 overflow-hidden relative flex items-center justify-center">
         {poster ? (
-          <img src={poster} alt={alt} className="absolute inset-0 w-full h-full object-contain object-center opacity-100 transition-opacity" />
+          <img
+            src={poster}
+            alt={alt}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-contain object-center opacity-100 transition-opacity"
+          />
         ) : (
           <span className="text-[10px] font-semibold tracking-widest uppercase text-black/50 dark:text-white/50 animate-pulse text-center">
             {alt} 3D<br/>Loading...
@@ -58,7 +89,7 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
   }
 
   return (
-    <div className="w-full h-full overflow-hidden relative group">
+    <div ref={containerRef} className="w-full h-full overflow-hidden relative group">
       {React.createElement(
         'model-viewer',
         {
@@ -68,8 +99,9 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           alt,
           poster,
           'camera-controls': true,
-          'auto-rotate': true,
+          'auto-rotate': showInteractiveUI ? true : undefined,
           'interaction-prompt': 'none',
+          loading: 'lazy',
           ar: true,
           'ar-modes': 'webxr scene-viewer quick-look',
           'ar-placement': 'floor',
@@ -82,7 +114,13 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
         <>
           <div slot="poster" className="absolute inset-0 flex flex-col items-center justify-center bg-black/5 dark:bg-white/5">
             {poster ? (
-              <img src={poster} alt={alt} className="absolute inset-0 w-full h-full object-contain object-center" />
+              <img
+                src={poster}
+                alt={alt}
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-contain object-center"
+              />
             ) : (
                <span className="text-[10px] font-semibold tracking-widest uppercase text-black/50 dark:text-white/50 animate-pulse z-10 relative text-center">
                  {alt} 3D<br/>Loading...

@@ -1,7 +1,7 @@
 // page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
@@ -217,9 +217,18 @@ function Header({ cartCount, onCartClick }: { cartCount: number; onCartClick: ()
   );
 }
 
-function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: { item: any, onFallback: (item: any) => void, layout?: 'list' | 'grid', cart: Record<number, number>, updateQuantity: (id: number, delta: number) => void }) {
+const MenuItem = React.memo(function MenuItem({
+  item,
+  layout = 'list',
+  quantity,
+  updateQuantity
+}: {
+  item: any,
+  layout?: 'list' | 'grid',
+  quantity: number,
+  updateQuantity: (id: number, delta: number) => void
+}) {
   const isGrid = layout === 'grid';
-  const quantity = cart[item.id] || 0;
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -336,7 +345,7 @@ function MenuItem({ item, onFallback, layout = 'list', cart, updateQuantity }: {
       </div>
     </article>
   );
-}
+});
 
 function Footer() {
   return (
@@ -388,7 +397,7 @@ export default function SmartMenuPage() {
   const { data: dbMenuItems = [] } = useSWR("menuItems", getMenuItems);
   const { data: dbSettings } = useSWR("settings", getSettings);
 
-  const ALL_MENU_ITEMS = [...MENU_ITEMS, ...dbMenuItems];
+  const ALL_MENU_ITEMS = useMemo(() => [...MENU_ITEMS, ...dbMenuItems], [dbMenuItems]);
   
   const currentGstRate = dbSettings?.gstRate ?? 5;
 
@@ -426,32 +435,39 @@ export default function SmartMenuPage() {
   const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
   const [orderHistory, setOrderHistory] = useState<ConfirmedOrder[]>([]);
   
-  const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+  const cartCount = useMemo(() => Object.values(cart).reduce((sum, qty) => sum + qty, 0), [cart]);
   
-  const cartItems = ALL_MENU_ITEMS.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
-    ...item,
-    quantity: cart[item.id],
-    numericPrice: Number(item.price.replace(/[^\d]/g, '')) || 0,
-  }));
+  const cartItems = useMemo(
+    () =>
+      ALL_MENU_ITEMS.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
+        ...item,
+        quantity: cart[item.id],
+        numericPrice: Number(item.price.replace(/[^\d]/g, '')) || 0,
+      })),
+    [ALL_MENU_ITEMS, cart]
+  );
   
-  const cartSubtotal = cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0);
-  const gstAmount = Math.round(cartSubtotal * (currentGstRate / 100)); 
-  const cartGrandTotal = cartSubtotal + gstAmount;
+  const cartSubtotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0),
+    [cartItems]
+  );
+  const gstAmount = useMemo(() => Math.round(cartSubtotal * (currentGstRate / 100)), [cartSubtotal, currentGstRate]);
+  const cartGrandTotal = useMemo(() => cartSubtotal + gstAmount, [cartSubtotal, gstAmount]);
 
-  const updateQuantity = (itemId: number, delta: number) => {
-     setCart(prev => {
-        const newCart = { ...prev };
-        const current = newCart[itemId] || 0;
-        const updated = current + delta;
-        
-        if (updated <= 0) {
-           delete newCart[itemId];
-        } else {
-           newCart[itemId] = updated;
-        }
-        return newCart;
-     });
-  };
+  const updateQuantity = useCallback((itemId: number, delta: number) => {
+    setCart(prev => {
+      const newCart = { ...prev };
+      const current = newCart[itemId] || 0;
+      const updated = current + delta;
+
+      if (updated <= 0) {
+        delete newCart[itemId];
+      } else {
+        newCart[itemId] = updated;
+      }
+      return newCart;
+    });
+  }, []);
 
   const openOrderModal = () => {
     if (cartCount === 0) return;
@@ -559,14 +575,21 @@ export default function SmartMenuPage() {
   const [dietFilter, setDietFilter] = useState<'All' | 'Veg' | 'Non-Veg'>('All');
   const [viewLayout, setViewLayout] = useState<'list' | 'grid'>('list');
 
-  const filteredItems = ALL_MENU_ITEMS.filter(item => {
-    const matchCategory = activeCategory === 'All' || item.category === activeCategory;
-    const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        (Array.isArray(item.ingredients) && item.ingredients.some((ing: string) => ing.toLowerCase().includes(searchQuery.toLowerCase())));
-    const matchDiet = dietFilter === 'All' || item.diet === dietFilter;
-    return matchCategory && matchSearch && matchDiet;
-  });
+  const filteredItems = useMemo(
+    () =>
+      ALL_MENU_ITEMS.filter(item => {
+        const matchCategory = activeCategory === 'All' || item.category === activeCategory;
+        const query = searchQuery.toLowerCase();
+        const matchSearch =
+          item.name.toLowerCase().includes(query) ||
+          item.description.toLowerCase().includes(query) ||
+          (Array.isArray(item.ingredients) &&
+            item.ingredients.some((ing: string) => ing.toLowerCase().includes(query)));
+        const matchDiet = dietFilter === 'All' || item.diet === dietFilter;
+        return matchCategory && matchSearch && matchDiet;
+      }),
+    [ALL_MENU_ITEMS, activeCategory, searchQuery, dietFilter]
+  );
 
   return (
     <ThemeProvider>
@@ -675,7 +698,13 @@ export default function SmartMenuPage() {
         <main className={`flex-1 px-4 sm:px-10 py-6 w-full ${viewLayout === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6' : 'flex flex-col gap-4'}`}>
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => (
-              <MenuItem key={item.id} item={item} onFallback={setFallbackItem} layout={viewLayout} cart={cart} updateQuantity={updateQuantity} />
+              <MenuItem
+                key={item.id}
+                item={item}
+                layout={viewLayout}
+                quantity={cart[item.id] || 0}
+                updateQuantity={updateQuantity}
+              />
             ))
           ) : (
             <div className="w-full py-20 flex flex-col items-center justify-center text-center opacity-50 col-span-full">
