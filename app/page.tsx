@@ -1,14 +1,34 @@
 // page.tsx
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import ModelViewer from "@/components/ModelViewer";
 import { 
   Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, 
-  LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X, CheckCircle2 
+  LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X, CheckCircle2, Mic 
 } from "lucide-react";
+
+function levenshtein(a: string, b: string): number {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
 import { IoSearch } from "react-icons/io5";
 import { RiBowlLine } from "react-icons/ri";
 import { submitOrder } from "@/actions/orders"; 
@@ -162,6 +182,130 @@ const CATEGORIES = [
   { id: 'Drinks', label: 'Drinks', icon: Coffee },
 ];
 
+const TRANSLATIONS: Record<string, { [key: string]: { name: string; description: string } }> = {
+  "Truffle Mushroom Pizza": {
+    en: { name: "Truffle Mushroom Pizza", description: "Wood-fired pizza with creamy truffle sauce, wild mushrooms, mozzarella, and fresh basil." },
+    hi: { name: "ट्रफल मशरूम पिज्जा", description: "क्रीमी ट्रफल सॉस, जंगली मशरूम, मोज़ेरेला और ताज़ी तुलसी के साथ लकड़ी पर पकाया गया पिज़्ज़ा।" },
+    mr: { name: "ट्रफल मशरूम पिझ्झा", description: "क्रीमी ट्रफल सॉस, जंगली मशरूम, मोझारेला आणि ताज्या तुळशीसह लाकडावर भाजलेला पिझ्झा." },
+    gu: { name: "ટ્રફલ મશરૂમ પિઝા", description: "ક્રીમી ટ્રફલ સોસ, જંગલી મશરૂમ્સ, મોઝેરેલા અને તાજી તુલસીનો છોડ સાથે વુડ-ફાયર્ડ પિઝા." }
+  },
+  "Classic Veggie Burger": {
+    en: { name: "Classic Veggie Burger", description: "Grilled veggie patty with lettuce, tomato, cheese, and house sauce in a toasted bun." },
+    hi: { name: "क्लासिक वेजी बर्गर", description: "ग्रिल्ड वेज पैटी के साथ लेट्यूस, टमाटर, चीज़ और हाउस सॉस एक टोस्टेड बन में।" },
+    mr: { name: "क्लासिक व्हेज बर्गर", description: "लेट्युस, टोमॅटो, चीज आणि हाऊस सॉससह ग्रिल केलेली व्हेज पॅटी टोस्टेड बनमध्ये." },
+    gu: { name: "ક્લાસિક વેજી બર્ગર", description: "લેટીસ, ટામેટા, ચીઝ અને હાઉસ સોસ સાથે શેકેલા વેજ પેટી." }
+  },
+  "Spicy Veg Ramen": {
+    en: { name: "Spicy Veg Ramen", description: "Rich vegetable broth ramen with noodles, tofu, corn, mushrooms, and chili oil." },
+    hi: { name: "मसालेदार वेज रेमन", description: "नूडल्स, टोफू, मक्का, मशरूम और चिली ऑयल के साथ रिच वेजिटेबल ब्रोथ रेमन।" },
+    mr: { name: "मसालेदार व्हेज रामेन", description: "नूडल्स, टोफू, कॉर्न, मशरूम आणि चिली ऑइलसह रिच व्हेजिटेबल ब्रोथ रामेन." },
+    gu: { name: "મસાલેદાર વેજ રામેન", description: "નૂડલ્સ, ટોફુ, મકાઈ, મશરૂમ્સ અને મરચાંના તેલ સાથે સમૃદ્ધ શાકભાજી સૂપ રામેન." }
+  },
+  "Pesto Paneer Noodles": {
+    en: { name: "Pesto Paneer Noodles", description: "Stir-fried noodles tossed in creamy basil pesto with grilled paneer, crunchy vegetables, and herbs." },
+    hi: { name: "पेस्टो पनीर नूडल्स", description: "क्रीमी बेसिल पेस्टो में टॉस किए गए स्टिर-फ्राइड नूडल्स, ग्रिल्ड पनीर, कुरकुरी सब्जियां और जड़ी-बूटियों के साथ।" },
+    mr: { name: "पेस्टो पनीर नूडल्स", description: "क्रीमी बेसिल पेस्टोमध्ये टॉस केलेले स्टिर-फ्राईड नूडल्स, ग्रिल्ड पनीर, कुरकुरीत भाज्या आणि औषधी वनस्पतींसह." },
+    gu: { name: "પેસ્ટો પનીર નૂડલ્સ", description: "ક્રીમી તુલસીનો છોડ પેસ્ટોમાં શેકેલા પનીર, કડક શાકભાજી અને જડીબુટ્ટીઓ સાથે સ્ટિર-ફ્રાઈડ નૂડલ્સ." }
+  },
+  "Bombay Sandwich": {
+    en: { name: "Bombay Sandwich", description: "Grilled Mumbai-style sandwich layered with spiced potato filling, fresh cucumber, tomato, onion, mint chutney, and cheese, served with fries." },
+    hi: { name: "बॉम्बे सैंडविच", description: "मसालेदार आलू की फिलिंग, ताज़ा खीरा, टमाटर, प्याज, पुदीने की चटनी और चीज़ के साथ ग्रिल्ड मुंबई-स्टाइल सैंडविच, फ्राइज़ के साथ परोसा गया।" },
+    mr: { name: "बॉम्बे सँडविच", description: "मसालेदार बटाटा फिलिंग, ताजी काकडी, टोमॅटो, कांदा, पुदिन्याची चटणी आणि चीजसह ग्रिल केलेले मुंबई-स्टाईल सँडविच, फ्राईजसोबत दिले जाते." },
+    gu: { name: "બોમ્બે સેન્ડવીચ", description: "મસાલેદાર બટાટા ભરણ, તાજા કાકડી, ટામેટા, ડુંગળી, ફુદીનાની ચટણી અને ચીઝ સાથે શેકેલી મુંબઈ-શૈલીની સેન્ડવીચ, ફ્રાઈસ સાથે પીરસવામાં આવે છે." }
+  },
+  "Mediterranean Feta Salad": {
+    en: { name: "Mediterranean Feta Salad", description: "Crisp greens, kalamata olives, cucumber, cherry tomatoes, and feta cheese with a light vinaigrette." },
+    hi: { name: "भूमध्यसागरीय फेटा सलाद", description: "क्रिस्प ग्रीन्स, कलामाता जैतून, खीरा, चेरी टमाटर और फेटा चीज़ के साथ हल्का विनैग्रेट।" },
+    mr: { name: "मेडिटेरेनियन फेटा सॅलड", description: "क्रिस्प ग्रीन्स, कलामाटा ऑलिव्ह, काकडी, चेरी टोमॅटो आणि फेटा चीज हलक्या व्हिनॅग्रेटसह." },
+    gu: { name: "ભૂમધ્ય ફેટા કચુંબર", description: "કરકરા ગ્રીન્સ, કલામાટા ઓલિવ, કાકડી, ચેરી ટામેટાં અને ફેટા ચીઝ હળવા વિનેગ્રેટ સાથે." }
+  },
+  "Artisan Garlic Bread": {
+    en: { name: "Artisan Garlic Bread", description: "Freshly baked sourdough bread brushed with roasted garlic and herb butter." },
+    hi: { name: "कारीगर गार्लिक ब्रेड", description: "ताज़ी पकी हुई खट्टी ब्रेड जिसे भुने हुए लहसुन और हर्ब बटर के साथ ब्रश किया गया है।" },
+    mr: { name: "आर्टिसन गार्लिक ब्रेड", description: "ताज्या बेक केलेल्या सोरडफ ब्रेडला भाजलेला लसूण आणि हर्ब बटरने ब्रश केले जाते." },
+    gu: { name: "આર્ટિસન ગार्લિક બ્રેડ", description: "તાજી શેકેલી ખાટા બ્રેડ શેકેલા લસણ અને વનસ્પતિ માખણ સાથે બ્રશ." }
+  },
+  "Obsidian Lava Dessert": {
+    en: { name: "Obsidian Lava Dessert", description: "Molten dark chocolate cake served over a bed of edible gold crumbs and liquid nitrogen." },
+    hi: { name: "ऑब्सीडियन लावा डेज़र्ट", description: "पिघला हुआ डार्क चॉकलेट केक, जो खाने योग्य सोने के टुकड़ों और तरल नाइट्रोजन के ऊपर परोसा जाता है।" },
+    mr: { name: "ऑब्सिडियन लावा डेझर्ट", description: "खाद्य सोन्याच्या तुकड्यांवर आणि द्रव नायट्रोजनवर वितळलेले डार्क चॉकलेट केक दिले जाते." },
+    gu: { name: "ઓબ્સિડીયન લાવા ડેઝર્ટ", description: "પીગળેલા ડાર્ક ચોકલેટ કેકને ખાદ્ય સોનાના ટુકડા અને પ્રવાહી નાઇટ્રોજનની પથારી પર પીરસવામાં આવે છે." }
+  },
+  "Blue Galactic Mojito": {
+    en: { name: "Blue Galactic Mojito", description: "A visually striking mix of blue curaçao, mint, lime, and sparkling water." },
+    hi: { name: "ब्लू गेलेक्टिक मोजिटो", description: "ब्लू कुराकाओ, पुदीना, नींबू और स्पार्कलिंग पानी का एक दृष्टिगत रूप से आकर्षक मिश्रण।" },
+    mr: { name: "ब्लू गॅलेक्टिक मोजितो", description: "ब्लू कुराकाओ, पुदीना, लिंबू आणि स्पार्कलिंग वॉटर यांचे दृष्यदृष्ट्या आकर्षक मिश्रण." },
+    gu: { name: "બ્લુ ગેલેક્ટીક મોજીટો", description: "વાદળી કુરાકાઓ, ફુદીનો, ચૂનો અને સ્પાર્કલિંગ પાણીનું દૃષ્ટિની આકર્ષક મિશ્રણ." }
+  },
+  "Chicken Tikka Skewers": {
+    en: { name: "Chicken Tikka Skewers", description: "Tender chicken chunks marinated in spiced yogurt, grilled to perfection." },
+    hi: { name: "चिकन टिक्का स्क्यूअर्स", description: "मसालेदार दही में मैरीनेट किए गए निविदा चिकन के टुकड़े, ग्रिल किए हुए।" },
+    mr: { name: "चिकन टिक्का स्क्युअर्स", description: "मसालेदार दह्यामध्ये मॅरीनेट केलेले चिकनचे तुकडे, उत्तम प्रकारे ग्रिल केलेले." },
+    gu: { name: "ચિકન ટિક્કા સ્કીવર્સ", description: "મસાલેદાર દહીંમાં મેરીનેટ કરેલા ટેન્ડર ચિકન ટુકડાઓ, સંપૂર્ણતા માટે શેકેલા." }
+  }
+};
+
+const WAITER_TRANSLATIONS: Record<string, Record<string, string>> = {
+  callWaiter: { en: "Call the Waiter", hi: "वेटर को बुलाएं", mr: "वेटरला बोलवा", gu: "વેઈટરને બોલાવો" },
+  subtitle: { 
+    en: "Please enter your table number and we will be right there to assist you.", 
+    hi: "कृपया अपना टेबल नंबर दर्ज करें और हम आपकी सहायता के लिए तुरंत वहां पहुंचेंगे।", 
+    mr: "कृपया तुमचा टेबल क्रमांक प्रविष्ट करा आणि आम्ही तुम्हाला मदत करण्यासाठी लगेच तिथे पोहोचू.", 
+    gu: "કૃપા કરીને તમારો ટેબલ નંબર દાખલ કરો અને અમે તમને મદદ કરવા માટે તરત જ ત્યાં પહોંચીશું." 
+  },
+  tableNumber: { en: "Table Number", hi: "टेबल नंबर", mr: "टेबल क्रमांक", gu: "ટેબલ નંબર" },
+  placeholder: { en: "e.g. 12", hi: "उदा. 12", mr: "उदा. 12", gu: "દા.ત. 12" },
+  requestWaiter: { en: "Request Waiter", hi: "वेटर का अनुरोध करें", mr: "वेटरची विनंती करा", gu: "વેઈટરની વિનંતી કરો" },
+  calling: { en: "Calling...", hi: "बुला रहे हैं...", mr: "बोलवत आहे...", gu: "બોલાવી રહ્યા છીએ..." },
+  requestSent: { en: "Request Sent!", hi: "अनुरोध भेजा गया!", mr: "विनंती पाठवली!", gu: "વિનંતી મોકલાઈ!" },
+  onWayPrefix: { en: "A waiter is on their way to ", hi: "वेटर टेबल ", mr: "वेटर टेबल ", gu: "વેઈટર ટેબલ " },
+  onWaySuffix: { en: ".", hi: " की ओर आ रहा है।", mr: " कडे येत आहे.", gu: " તરફ આવી રહ્યો છે." },
+  close: { en: "Close", hi: "बंद करें", mr: "बंद करा", gu: "બંધ કરો" }
+};
+
+const ORDER_TRANSLATIONS: Record<string, Record<string, string>> = {
+  yourOrder: { en: "Your Order", hi: "आपका ऑर्डर", mr: "तुमची ऑर्डर", gu: "તમારો ઓર્ડર" },
+  orderSummary: { en: "Order Summary", hi: "ऑर्डर सारांश", mr: "ऑर्डर सारांश", gu: "ઓર્ડર સારાંશ" },
+  guestDetails: { en: "Guest Details", hi: "अतिथि विवरण", mr: "अतिथी तपशील", gu: "અતિથિ વિગતો" },
+  orderConfirmed: { en: "Order Confirmed", hi: "ऑर्डर की पुष्टि", mr: "ऑर्डर निश्चित झाली", gu: "ઓર્ડર કન્ફર્મ થયો" },
+  addNoteOptional: { en: "Add Note (Optional)", hi: "नोट जोड़ें (वैकल्पिक)", mr: "टीप जोडा (पर्यायी)", gu: "નોંધ ઉમેરો (વૈકલ્પિક)" },
+  generalNoteOptional: { en: "General Order Note (Optional)", hi: "सामान्य ऑर्डर नोट (वैकल्पिक)", mr: "सामान्य ऑर्डर टीप (पर्यायी)", gu: "સામાન્ય ઓર્ડર નોંધ (વૈકલ્પિક)" },
+  generalNotePlaceholder: { 
+    en: "Example: Please serve all dishes together / less spicy / birthday table.", 
+    hi: "उदाहरण: कृपया सभी व्यंजन एक साथ परोसें / कम तीखा / जन्मदिन की टेबल।", 
+    mr: "उदाहरण: कृपया सर्व पदार्थ एकत्र सर्व्ह करा / कमी तिखट / वाढदिवसाचे टेबल.", 
+    gu: "ઉદાહરણ: કૃપા કરીને બધી વાનગીઓ એકસાથે પીરસો / ઓછું તીખું / જન્મદિવસનું ટેબલ." 
+  },
+  subtotal: { en: "Subtotal", hi: "उप-योग", mr: "उप-एकूण", gu: "પેટા-કુલ" },
+  gst: { en: "GST", hi: "जीएसटी", mr: "जीएसटी", gu: "જીએસટી" },
+  grandTotal: { en: "Grand Total", hi: "कुल योग", mr: "एकूण रक्कम", gu: "કુલ રકમ" },
+  confirmOrder: { en: "Confirm Order", hi: "ऑर्डर कन्फर्म करें", mr: "ऑर्डर कन्फर्म करा", gu: "ઓર્ડર કન્ફર્મ કરો" },
+  emptyCart: { 
+    en: "Your cart is empty. Add items to continue.", 
+    hi: "आपका कार्ट खाली है। जारी रखने के लिए आइटम जोड़ें।", 
+    mr: "तुमची कार्ट रिकामी आहे. सुरू ठेवण्यासाठी आयटम जोडा.", 
+    gu: "તમારું કાર્ટ ખાલી છે. ચાલુ રાખવા માટે આઇટમ્સ ઉમેરો." 
+  },
+  removeItemTitle: { en: "Remove Item?", hi: "आइटम हटाएं?", mr: "आयटम काढायचा?", gu: "આઇટમ દૂર કરવી છે?" },
+  removeItemText: { 
+    en: "Are you sure you want to remove this item from your order?", 
+    hi: "क्या आप वाकई इस आइटम को अपने ऑर्डर से हटाना चाहते हैं?", 
+    mr: "तुम्हाला खात्री आहे की तुम्हाला हा आयटम तुमच्या ऑर्डरमधून काढायचा आहे?", 
+    gu: "શું તમે ખરેખર આ આઇટમને તમારા ઓર્ડરમાંથી દૂર કરવા માંગો છો?" 
+  },
+  cancel: { en: "Cancel", hi: "रद्द करें", mr: "रद्द करा", gu: "રદ કરો" },
+  remove: { en: "Remove", hi: "हटाएं", mr: "काढून टाका", gu: "દૂર કરો" }
+};
+
+const getNotePlaceholder = (name: string, lang: string) => {
+  switch(lang) {
+    case 'hi': return `${name} के लिए नोट`;
+    case 'mr': return `${name} साठी टीप`;
+    case 'gu': return `${name} માટે નોંધ`;
+    default: return `Note for ${name}`;
+  }
+};
+
 function generateOrderId() {
   const timestamp = Date.now().toString().slice(-6);
   return `ORD-${timestamp}`;
@@ -189,7 +333,34 @@ function ThemeToggle() {
   );
 }
 
-function Header({ cartCount, onCartClick }: { cartCount: number; onCartClick: () => void }) {
+function Header({ cartCount, onCartClick, language, setLanguage }: { cartCount: number; onCartClick: () => void, language: string, setLanguage: (l: string) => void }) {
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setIsLangOpen(false);
+      }
+    };
+    
+    const handleScroll = () => {
+      if (isLangOpen) {
+        setIsLangOpen(false);
+      }
+    };
+
+    if (isLangOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("scroll", handleScroll, { passive: true });
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isLangOpen]);
+
   return (
     <header className="h-16 flex items-center justify-between px-4 sm:px-10 border-b border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40 backdrop-blur-md sticky top-0 z-50 transition-colors duration-500">
       <div className="flex items-center space-x-2 sm:space-x-4">
@@ -197,11 +368,27 @@ function Header({ cartCount, onCartClick }: { cartCount: number; onCartClick: ()
         <span className="text-black/20 dark:text-white/20">|</span>
         <span className="uppercase tracking-[0.1em] text-[8px] sm:text-[10px] text-black/60 dark:text-white/60">5D Menu</span>
       </div>
-      <div className="flex items-center space-x-4 sm:space-x-6">
+      <div className="flex items-center gap-4 sm:gap-6">
+        <div className="relative group" ref={langMenuRef}>
+          <button 
+             onClick={() => setIsLangOpen(!isLangOpen)}
+             className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-black/80 dark:text-white/80 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm px-2 py-1 flex items-center gap-1 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+          >
+             {language === 'en' ? 'EN' : language === 'mr' ? 'MR' : language === 'hi' ? 'HI' : 'GU'}
+          </button>
+          <div className={`absolute top-full mt-1 right-0 sm:right-2 bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 rounded-sm shadow-xl transition-all flex flex-col z-50 overflow-hidden w-28 ${
+             isLangOpen ? 'opacity-100 visible' : 'opacity-0 invisible sm:group-hover:opacity-100 sm:group-hover:visible'
+          }`}>
+             <button onClick={() => { setLanguage('en'); setIsLangOpen(false); }} className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-black dark:text-white">English</button>
+             <button onClick={() => { setLanguage('mr'); setIsLangOpen(false); }} className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-black dark:text-white">मराठी</button>
+             <button onClick={() => { setLanguage('hi'); setIsLangOpen(false); }} className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-black dark:text-white">हिंदी</button>
+             <button onClick={() => { setLanguage('gu'); setIsLangOpen(false); }} className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-black dark:text-white">ગુજરાતી</button>
+          </div>
+        </div>
         <button
           onClick={onCartClick}
           disabled={cartCount === 0}
-          className={`relative group p-1 mr-2 transition-opacity ${cartCount === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          className={`relative group p-1 transition-opacity ${cartCount === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           aria-label="Open cart orders"
         >
            <RiBowlLine size={22} className="text-black/80 dark:text-white/80 transition-colors group-hover:text-gold" />
@@ -416,6 +603,7 @@ export default function SmartMenuPage() {
 
   const [fallbackItem, setFallbackItem] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [language, setLanguage] = useState<string>('en');
   
   // ✅ Waiter Modal States
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
@@ -424,6 +612,7 @@ export default function SmartMenuPage() {
   const [isCallingWaiter, setIsCallingWaiter] = useState(false);
   
   const [cart, setCart] = useState<Record<number, number>>({});
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [orderStep, setOrderStep] = useState<'summary' | 'details' | 'confirmed'>('summary');
   const [isEditingOrder, setIsEditingOrder] = useState(false);
@@ -434,39 +623,51 @@ export default function SmartMenuPage() {
   const [itemNotes, setItemNotes] = useState<Record<number, string>>({});
   const [latestOrderId, setLatestOrderId] = useState<string | null>(null);
   const [orderHistory, setOrderHistory] = useState<ConfirmedOrder[]>([]);
+
+  // Prevent background scrolling when modals are open
+  useEffect(() => {
+    if (isOrderModalOpen || isWaiterModalOpen || itemToDelete !== null) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOrderModalOpen, isWaiterModalOpen, itemToDelete]);
   
   const cartCount = useMemo(() => Object.values(cart).reduce((sum, qty) => sum + qty, 0), [cart]);
   
-  const cartItems = useMemo(
-    () =>
-      ALL_MENU_ITEMS.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
-        ...item,
-        quantity: cart[item.id],
-        numericPrice: Number(item.price.replace(/[^\d]/g, '')) || 0,
-      })),
-    [ALL_MENU_ITEMS, cart]
-  );
-  
-  const cartSubtotal = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0),
-    [cartItems]
-  );
-  const gstAmount = useMemo(() => Math.round(cartSubtotal * (currentGstRate / 100)), [cartSubtotal, currentGstRate]);
-  const cartGrandTotal = useMemo(() => cartSubtotal + gstAmount, [cartSubtotal, gstAmount]);
+
 
   const updateQuantity = useCallback((itemId: number, delta: number) => {
     setCart(prev => {
-      const newCart = { ...prev };
-      const current = newCart[itemId] || 0;
+      const current = prev[itemId] || 0;
       const updated = current + delta;
 
       if (updated <= 0) {
-        delete newCart[itemId];
+        setItemToDelete(itemId);
+        return prev;
       } else {
-        newCart[itemId] = updated;
+        const newCart = { ...prev, [itemId]: updated };
+        return newCart;
       }
-      return newCart;
     });
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (itemToDelete !== null) {
+      setCart(prev => {
+        const newCart = { ...prev };
+        delete newCart[itemToDelete];
+        return newCart;
+      });
+      setItemToDelete(null);
+    }
+  }, [itemToDelete]);
+
+  const cancelDelete = useCallback(() => {
+    setItemToDelete(null);
   }, []);
 
   const openOrderModal = () => {
@@ -574,10 +775,72 @@ export default function SmartMenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dietFilter, setDietFilter] = useState<'All' | 'Veg' | 'Non-Veg'>('All');
   const [viewLayout, setViewLayout] = useState<'list' | 'grid'>('list');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const startVoiceSearch = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice search is not supported in your browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+
+    recognition.lang = language === 'en' ? 'en-US' : language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'gu-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript.replace(/\.$/, ''));
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.start();
+  };
+
+  const localizedItems = useMemo(() => {
+     return ALL_MENU_ITEMS.map(item => {
+        const trans = TRANSLATIONS[item.name]?.[language];
+        if (trans) {
+           return { ...item, name: trans.name, description: trans.description };
+        }
+        return item;
+     });
+  }, [ALL_MENU_ITEMS, language]);
+
+  const cartItems = useMemo(
+    () =>
+      localizedItems.filter((item) => (cart[item.id] || 0) > 0).map((item) => ({
+        ...item,
+        quantity: cart[item.id],
+        numericPrice: Number(item.price.replace(/[^\d]/g, '')) || 0,
+      })),
+    [localizedItems, cart]
+  );
+  
+  const cartSubtotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.numericPrice * item.quantity, 0),
+    [cartItems]
+  );
+  const gstAmount = useMemo(() => Math.round(cartSubtotal * (currentGstRate / 100)), [cartSubtotal, currentGstRate]);
+  const cartGrandTotal = useMemo(() => cartSubtotal + gstAmount, [cartSubtotal, gstAmount]);
 
   const filteredItems = useMemo(
     () =>
-      ALL_MENU_ITEMS.filter(item => {
+      localizedItems.filter(item => {
         const matchCategory = activeCategory === 'All' || item.category === activeCategory;
         const query = searchQuery.toLowerCase();
         const matchSearch =
@@ -588,13 +851,50 @@ export default function SmartMenuPage() {
         const matchDiet = dietFilter === 'All' || item.diet === dietFilter;
         return matchCategory && matchSearch && matchDiet;
       }),
-    [ALL_MENU_ITEMS, activeCategory, searchQuery, dietFilter]
+    [localizedItems, activeCategory, searchQuery, dietFilter]
   );
+
+  const suggestedQuery = useMemo(() => {
+    if (filteredItems.length > 0 || !searchQuery) return null;
+    let closestSuggestion: string | null = null;
+    let minDistance = Infinity;
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return null;
+    
+    // Check full item names first
+    for (const item of localizedItems) {
+      const name = item.name.toLowerCase();
+      if (name.includes(query) || query.includes(name)) return item.name;
+      
+      const distance = levenshtein(query, name);
+      if (distance < minDistance && distance <= Math.max(3, name.length * 0.4)) {
+        minDistance = distance;
+        closestSuggestion = item.name;
+      }
+    }
+
+    // Check individual words in both name and description
+    for (const item of localizedItems) {
+      const textToSearch = `${item.name} ${item.description}`.toLowerCase();
+      const words = textToSearch.split(/[\s,.-]+/);
+      for (const w of words) {
+         if (w.length < 3) continue; // Allow short words like 'veg' and 'sup'
+         const d = levenshtein(query, w);
+         // More lenient threshold for typos
+         const threshold = Math.max(3, Math.ceil(w.length * 0.5));
+         if (d < minDistance && d <= threshold) {
+            minDistance = d;
+            closestSuggestion = w;
+         }
+      }
+    }
+    return closestSuggestion;
+  }, [filteredItems.length, searchQuery, localizedItems]);
 
   return (
     <ThemeProvider>
       <div className="flex flex-col min-h-screen relative">
-        <Header cartCount={cartCount} onCartClick={openOrderModal} />
+        <Header cartCount={cartCount} onCartClick={openOrderModal} language={language} setLanguage={setLanguage} />
         
         <section className="w-full bg-white/30 dark:bg-black/30 backdrop-blur-md border-b border-black/5 dark:border-white/5 sticky top-16 z-40">
           <div className="w-full px-4 sm:px-10">
@@ -633,15 +933,33 @@ export default function SmartMenuPage() {
 
         <section className="w-full pt-6 pb-2 z-30">
           <div className="w-full px-4 sm:px-10 flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:flex-1 shrink">
+            <div className="relative w-full md:flex-1 shrink flex items-center">
               <IoSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 z-10" size={16} />
               <input 
                 type="text" 
                 placeholder="Search menu or ingredients..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-glass border border-black/10 dark:border-white/10 rounded-full pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-gold transition-colors text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40"
+                className="w-full bg-glass border border-black/10 dark:border-white/10 rounded-full pl-10 pr-20 py-2.5 text-sm focus:outline-none focus:border-gold transition-colors text-black dark:text-white placeholder:text-black/40 dark:placeholder:text-white/40"
               />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-10">
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery("")}
+                    className="p-1.5 rounded-full text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                    title="Clear Text"
+                  >
+                    <X size={14} strokeWidth={2.5} />
+                  </button>
+                )}
+                <button 
+                  onClick={startVoiceSearch}
+                  className={`p-1.5 rounded-full transition-all duration-300 ${isListening ? 'bg-red-500 text-white animate-pulse shadow-md' : 'text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 hover:text-gold cursor-pointer'}`}
+                  title="Search by Voice"
+                >
+                   <Mic size={16} />
+                </button>
+              </div>
             </div>
             
             <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end shrink-0">
@@ -710,11 +1028,22 @@ export default function SmartMenuPage() {
             <div className="w-full py-20 flex flex-col items-center justify-center text-center opacity-50 col-span-full">
                <Search size={48} className="mb-4 text-black dark:text-white opacity-20" />
                <p className="text-lg font-serif italic text-black dark:text-white">No items match your search.</p>
+               {suggestedQuery && (
+                  <div className="mt-4 pointer-events-auto">
+                     <p className="text-sm text-black/60 dark:text-white/60 mb-2">Did you mean?</p>
+                     <button 
+                        onClick={() => setSearchQuery(suggestedQuery)}
+                        className="text-base sm:text-lg font-serif italic text-gold hover:text-amber-500 transition-colors border-b border-gold/30 pb-0.5 cursor-pointer"
+                     >
+                        {suggestedQuery}
+                     </button>
+                  </div>
+               )}
                <button 
                   onClick={() => { setSearchQuery(""); setDietFilter("All"); setActiveCategory("All"); }}
-                  className="mt-4 text-[10px] uppercase font-bold tracking-widest text-gold text-center hover:opacity-70 transition border-b border-gold/30 pb-1 pointer-events-auto"
+                  className="mt-6 text-[10px] uppercase font-bold tracking-widest text-black/50 dark:text-white/50 text-center hover:text-black dark:hover:text-white transition pointer-events-auto cursor-pointer"
                >
-                 Clear Filters
+                 Clear Search
                </button>
             </div>
           )}
@@ -751,9 +1080,9 @@ export default function SmartMenuPage() {
                        <User size={24} />
                    </div>
                    <div>
-                     <h3 className="text-xl font-serif italic text-black dark:text-white">Call the Waiter</h3>
+                     <h3 className="text-xl font-serif italic text-black dark:text-white">{WAITER_TRANSLATIONS.callWaiter[language] || WAITER_TRANSLATIONS.callWaiter.en}</h3>
                      <p className="text-xs text-black/50 dark:text-white/50 font-light mt-1 w-4/5 mx-auto">
-                        Please enter your table number and we will be right there to assist you.
+                        {WAITER_TRANSLATIONS.subtitle[language] || WAITER_TRANSLATIONS.subtitle.en}
                      </p>
                    </div>
                 </div>
@@ -762,7 +1091,7 @@ export default function SmartMenuPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1.5 ml-1">
-                         Table Number
+                         {WAITER_TRANSLATIONS.tableNumber[language] || WAITER_TRANSLATIONS.tableNumber.en}
                       </label>
                       <input
                         type="number"
@@ -771,7 +1100,7 @@ export default function SmartMenuPage() {
                         required
                         min="1"
                         className="no-spinners w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-gold text-black dark:text-white transition-colors placeholder:text-black/30 dark:placeholder:text-white/30"
-                        placeholder="e.g. 12"
+                        placeholder={WAITER_TRANSLATIONS.placeholder[language] || WAITER_TRANSLATIONS.placeholder.en}
                       />
                     </div>
                     <button 
@@ -779,7 +1108,9 @@ export default function SmartMenuPage() {
                       disabled={isCallingWaiter}
                       className="w-full bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isCallingWaiter ? "Calling..." : "Request Waiter"}
+                      {isCallingWaiter 
+                        ? (WAITER_TRANSLATIONS.calling[language] || WAITER_TRANSLATIONS.calling.en) 
+                        : (WAITER_TRANSLATIONS.requestWaiter[language] || WAITER_TRANSLATIONS.requestWaiter.en)}
                     </button>
                   </div>
                 </form>
@@ -790,19 +1121,48 @@ export default function SmartMenuPage() {
                   <CheckCircle2 size={36} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-serif italic text-black dark:text-white">Request Sent!</h3>
+                  <h3 className="text-xl font-serif italic text-black dark:text-white">{WAITER_TRANSLATIONS.requestSent[language] || WAITER_TRANSLATIONS.requestSent.en}</h3>
                   <p className="text-sm text-black/60 dark:text-white/60 font-light mt-2">
-                    A waiter is on their way to <strong className="text-gold">Table {tableNumber}</strong>.
+                    {WAITER_TRANSLATIONS.onWayPrefix[language] || WAITER_TRANSLATIONS.onWayPrefix.en}
+                    <strong className="text-gold">{language === 'en' ? `Table ${tableNumber}` : tableNumber}</strong>
+                    {WAITER_TRANSLATIONS.onWaySuffix[language] || WAITER_TRANSLATIONS.onWaySuffix.en}
                   </p>
                 </div>
                 <button
                   onClick={closeWaiterModal}
                   className="w-full bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-3 rounded-xl transition-all shadow-md cursor-pointer mt-6"
                 >
-                  Close
+                  {WAITER_TRANSLATIONS.close[language] || WAITER_TRANSLATIONS.close.en}
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {itemToDelete !== null && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+            <h3 className="text-xl font-serif italic text-black dark:text-white mb-2">
+              {ORDER_TRANSLATIONS.removeItemTitle[language] || ORDER_TRANSLATIONS.removeItemTitle.en}
+            </h3>
+            <p className="text-sm text-black/60 dark:text-white/60 mb-6">
+              {ORDER_TRANSLATIONS.removeItemText[language] || ORDER_TRANSLATIONS.removeItemText.en}
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={cancelDelete} 
+                className="flex-1 py-3 rounded-xl border border-black/10 dark:border-white/10 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                {ORDER_TRANSLATIONS.cancel[language] || ORDER_TRANSLATIONS.cancel.en}
+              </button>
+              <button 
+                onClick={confirmDelete} 
+                className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors shadow-md cursor-pointer"
+              >
+                {ORDER_TRANSLATIONS.remove[language] || ORDER_TRANSLATIONS.remove.en}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -826,13 +1186,13 @@ export default function SmartMenuPage() {
             </button>
 
             <div className="pr-8">
-              <h3 className="text-xl sm:text-2xl font-serif italic text-black dark:text-white">Your Order</h3>
+              <h3 className="text-xl sm:text-2xl font-serif italic text-black dark:text-white">{ORDER_TRANSLATIONS.yourOrder[language] || ORDER_TRANSLATIONS.yourOrder.en}</h3>
               <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-black/45 dark:text-white/45 mt-1">
                 {orderStep === 'summary'
-                  ? 'Order Summary'
+                  ? (ORDER_TRANSLATIONS.orderSummary[language] || ORDER_TRANSLATIONS.orderSummary.en)
                   : orderStep === 'details'
-                    ? 'Guest Details'
-                    : 'Order Confirmed'}
+                    ? (ORDER_TRANSLATIONS.guestDetails[language] || ORDER_TRANSLATIONS.guestDetails.en)
+                    : (ORDER_TRANSLATIONS.orderConfirmed[language] || ORDER_TRANSLATIONS.orderConfirmed.en)}
               </p>
             </div>
 
@@ -850,39 +1210,35 @@ export default function SmartMenuPage() {
                             <div>
                               <p className="text-sm sm:text-base font-semibold text-black dark:text-white">{item.name}</p>
                               <p className="text-[11px] sm:text-xs text-black/55 dark:text-white/55">
-                                {item.price} each
+                                {item.price} {language === 'mr' ? 'प्रत्येक' : language === 'hi' ? 'प्रत्येक' : language === 'gu' ? 'દરેક' : 'each'}
                               </p>
                             </div>
-                            {isEditingOrder ? (
                               <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-8 shrink-0">
                                 <button
                                   onClick={() => updateQuantity(item.id, -1)}
-                                  className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
+                                  className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center cursor-pointer"
                                 >
                                   <Minus size={12} strokeWidth={3} />
                                 </button>
                                 <span className="text-[11px] md:text-xs font-bold text-black dark:text-white w-6 text-center">{item.quantity}</span>
                                 <button
                                   onClick={() => updateQuantity(item.id, 1)}
-                                  className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center"
+                                  className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white flex items-center justify-center cursor-pointer"
                                 >
                                   <Plus size={12} strokeWidth={3} />
                                 </button>
                               </div>
-                            ) : (
-                              <p className="text-xs sm:text-sm text-black/75 dark:text-white/75 shrink-0">x{item.quantity}</p>
-                            )}
                           </div>
                           <div>
                             <label className="block text-[10px] uppercase tracking-[0.18em] text-black/45 dark:text-white/45 mb-1.5">
-                              Add Note (Optional)
+                              {ORDER_TRANSLATIONS.addNoteOptional[language] || ORDER_TRANSLATIONS.addNoteOptional.en}
                             </label>
                             <input
                               type="text"
                               value={itemNotes[item.id] || ''}
                               onChange={(e) => setItemNotes((prev) => ({ ...prev, [item.id]: e.target.value }))}
                               className="w-full bg-white/40 dark:bg-white/5 border border-black/10 dark:border-white/10 py-2 px-3 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-gold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
-                              placeholder={`Note for ${item.name}`}
+                              placeholder={getNotePlaceholder(item.name, language)}
                             />
                           </div>
                         </div>
@@ -891,50 +1247,44 @@ export default function SmartMenuPage() {
 
                     <div className="border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-xl p-3 sm:p-4">
                       <label className="block text-[10px] uppercase tracking-[0.18em] text-black/45 dark:text-white/45 mb-1.5">
-                        General Order Note (Optional)
+                        {ORDER_TRANSLATIONS.generalNoteOptional[language] || ORDER_TRANSLATIONS.generalNoteOptional.en}
                       </label>
                       <textarea
                         value={generalOrderNote}
                         onChange={(e) => setGeneralOrderNote(e.target.value)}
                         rows={3}
                         className="w-full resize-none bg-white/40 dark:bg-white/5 border border-black/10 dark:border-white/10 py-2.5 px-3 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-gold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
-                        placeholder="Example: Please serve all dishes together / less spicy / birthday table."
+                        placeholder={ORDER_TRANSLATIONS.generalNotePlaceholder[language] || ORDER_TRANSLATIONS.generalNotePlaceholder.en}
                       />
                     </div>
 
                     <div className="space-y-2 border-t border-black/10 dark:border-white/10 pt-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">Subtotal</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">{ORDER_TRANSLATIONS.subtotal[language] || ORDER_TRANSLATIONS.subtotal.en}</p>
                         <p className="text-sm font-serif text-black dark:text-white">₹{cartSubtotal}</p>
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">GST ({currentGstRate}%)</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-black/55 dark:text-white/55">{ORDER_TRANSLATIONS.gst[language] || ORDER_TRANSLATIONS.gst.en} ({currentGstRate}%)</p>
                         <p className="text-sm font-serif text-black dark:text-white">₹{gstAmount}</p>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
-                        <p className="text-xs uppercase tracking-[0.2em] text-black/80 dark:text-white/80 font-bold">Grand Total</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-black/80 dark:text-white/80 font-bold">{ORDER_TRANSLATIONS.grandTotal[language] || ORDER_TRANSLATIONS.grandTotal.en}</p>
                         <p className="text-lg sm:text-xl font-serif text-gold font-bold">₹{cartGrandTotal}</p>
                       </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
                       <button
-                        onClick={() => setIsEditingOrder((prev) => !prev)}
-                        className="w-full sm:w-auto px-6 py-2.5 border border-black/15 dark:border-white/15 rounded-xl text-[10px] sm:text-xs uppercase tracking-[0.2em] font-bold text-black/70 dark:text-white/70"
-                      >
-                        {isEditingOrder ? 'Done Editing' : 'Edit Order'}
-                      </button>
-                      <button
                         onClick={() => setOrderStep('details')}
                         className="w-full sm:flex-1 bg-gold/90 hover:bg-gold text-white font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                       >
-                        Confirm Order
+                        {ORDER_TRANSLATIONS.confirmOrder[language] || ORDER_TRANSLATIONS.confirmOrder.en}
                       </button>
                     </div>
                   </>
                 ) : (
                   <div className="py-8 text-center text-black/55 dark:text-white/55 text-sm">
-                    Your cart is empty. Add items to continue.
+                    {ORDER_TRANSLATIONS.emptyCart[language] || ORDER_TRANSLATIONS.emptyCart.en}
                   </div>
                 )}
               </div>
