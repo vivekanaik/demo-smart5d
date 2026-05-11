@@ -39,12 +39,16 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldLoadModel(true);
-          observer.disconnect();
-        }
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldLoadModel(true);
+          } else {
+            // Unmount when off-screen to free up WebGL contexts
+            setShouldLoadModel(false);
+          }
+        });
       },
-      { rootMargin: "800px" }
+      { rootMargin: "200px" }
     );
 
     observer.observe(container);

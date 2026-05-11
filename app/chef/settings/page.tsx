@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import { 
   Settings, Utensils, ReceiptText, ShieldAlert, Plus, Edit2, Trash2, X, Save, 
-  ArrowLeft, Eye, Image as ImageIcon, Bell 
+  ArrowLeft, Eye, Image as ImageIcon, Bell, Globe, CheckCircle2
 } from "lucide-react";
 import { 
   getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getSettings, updateGstRate, updatePassword, updateBillingSettings 
@@ -59,7 +59,21 @@ interface WaiterRequest {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<"menu" | "billing" | "security">("menu");
+  const [activeTab, setActiveTab] = useState<"menu" | "billing" | "security" | "language">("menu");
+  const [chefLanguage, setChefLanguage] = useState<string>("en");
+  const [showLangModal, setShowLangModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("chefPreferredLanguage");
+    if (saved) setChefLanguage(saved);
+  }, []);
+
+  const handleLanguageChange = (lang: string) => {
+    setChefLanguage(lang);
+    localStorage.setItem("chefPreferredLanguage", lang);
+    setShowLangModal(true);
+    setTimeout(() => setShowLangModal(false), 2500);
+  };
   
   // Data Fetching
   const { data: menuItems = [], mutate: mutateMenu, isLoading: isMenuLoading } = useSWR("menuItems", getMenuItems);
@@ -215,7 +229,7 @@ export default function SettingsPage() {
 
   return (
     <ThemeProvider>
-      <div className="flex flex-col min-h-screen">
+      <div className={`flex flex-col min-h-screen ${chefLanguage !== "en" ? "regional-lang" : ""}`}>
         {/* Header / Navbar */}
         <ChefHeader subtitle="Chef Console" /> {/* ✅ Use it here */}
 
@@ -264,6 +278,9 @@ export default function SettingsPage() {
             <button onClick={() => setActiveTab("security")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "security" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
               <ShieldAlert size={16} /> Security
             </button>
+            <button onClick={() => setActiveTab("language")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "language" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
+              <Globe size={16} /> Language
+            </button>
           </div>
         </section>
 
@@ -280,6 +297,19 @@ export default function SettingsPage() {
 
               {isMenuLoading ? (
                 <MenuSkeleton />
+              ) : menuItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-black/10 dark:border-white/10 rounded-2xl bg-black/5 dark:bg-white/5">
+                  <div className="w-16 h-16 bg-white dark:bg-black rounded-full flex items-center justify-center mb-4 shadow-sm border border-black/5 dark:border-white/5">
+                    <Utensils className="text-black/30 dark:text-white/30" size={32} />
+                  </div>
+                  <h3 className="text-lg font-serif italic text-black dark:text-white mb-2">No Menu Items Found</h3>
+                  <p className="text-xs text-black/50 dark:text-white/50 mb-6 max-w-xs">
+                    Your menu is currently empty. Add your first item to start building your restaurant's digital menu.
+                  </p>
+                  <button onClick={openAddModal} className="flex items-center gap-2 bg-gold hover:bg-gold/90 text-white px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-widest shadow-md transition">
+                    <Plus size={16} /> Add First Item
+                  </button>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {menuItems.map((item: any) => (
@@ -375,6 +405,42 @@ export default function SettingsPage() {
               <button onClick={handleBillingUpdate} className="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 hover:opacity-80 transition shadow-md">
                 <Save size={16} /> Save Billing Settings
               </button>
+            </div>
+          )}
+
+          {/* LANGUAGE TAB */}
+          {activeTab === "language" && (
+            <div className="space-y-6 max-w-2xl">
+              <div className="bg-glass border border-black/10 dark:border-white/10 rounded-2xl p-6 sm:p-8 shadow-sm">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-black/80 dark:text-white/90 mb-3">Interface Language</h3>
+                <p className="text-xs text-black/60 dark:text-white/60 mb-8 leading-relaxed max-w-md">
+                  Select your preferred language for the Chef Console. This helps your team read orders and manage the kitchen more comfortably.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { id: "en", label: "English", native: "English" },
+                    { id: "hi", label: "Hindi", native: "हिंदी" },
+                    { id: "mr", label: "Marathi", native: "मराठी" },
+                    { id: "gu", label: "Gujarati", native: "ગુજરાતી" },
+                  ].map((lang) => (
+                    <button
+                      key={lang.id}
+                      onClick={() => handleLanguageChange(lang.id)}
+                      className={`flex flex-col items-start p-5 rounded-xl border transition-all cursor-pointer ${
+                        chefLanguage === lang.id
+                          ? "bg-gold/10 border-gold/50 shadow-sm"
+                          : "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20"
+                      }`}
+                    >
+                      <span className={`text-lg font-bold ${chefLanguage === lang.id ? "text-gold" : "text-black dark:text-white"}`}>
+                        {lang.native}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-widest text-black/50 dark:text-white/50 mt-1">{lang.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -485,6 +551,27 @@ export default function SettingsPage() {
                 {editingItem ? "Update Menu Item" : "Save Menu Item"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Language Success Modal */}
+      {showLangModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-xs text-center">
+            <div className="w-12 h-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle2 size={24} />
+            </div>
+            <h3 className="text-lg font-serif italic text-black dark:text-white mb-2">Language Updated</h3>
+            <p className="text-xs text-black/60 dark:text-white/60 mb-6">
+              The Chef Console will now display text in your selected language.
+            </p>
+            <button 
+              onClick={() => setShowLangModal(false)}
+              className="w-full bg-black dark:bg-white text-white dark:text-black font-bold uppercase tracking-widest text-[10px] py-3 rounded-xl transition-all active:scale-[0.98] cursor-pointer"
+            >
+              Okay
+            </button>
           </div>
         </div>
       )}

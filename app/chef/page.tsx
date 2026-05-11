@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
+import { CHEF_TRANSLATIONS, ChefLanguage } from "@/lib/chef-translations";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import {
   BarChart3,
@@ -70,6 +71,24 @@ function minutesSince(dateVal: string | Date) {
 }
 
 function ChefContent() {
+  const [chefLanguage, setChefLanguage] = useState<ChefLanguage>("en");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("chefPreferredLanguage") as ChefLanguage;
+    if (saved && CHEF_TRANSLATIONS[saved]) {
+      setChefLanguage(saved);
+    }
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "chefPreferredLanguage" && e.newValue && CHEF_TRANSLATIONS[e.newValue as ChefLanguage]) {
+        setChefLanguage(e.newValue as ChefLanguage);
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const t = CHEF_TRANSLATIONS[chefLanguage];
   
   const { data: settings } = useSWR("settings", getSettings);
   const gstRate = settings?.gstRate ?? 5; 
@@ -89,13 +108,7 @@ function ChefContent() {
   const { data: currentAnalytics, isLoading: isAnalyticsLoading } = useSWR(
     ["analytics", analyticsWindow],
     ([_, window]) => getAnalytics(window as AnalyticsWindow),
-    { 
-      // Refresh analytics every 30 seconds to keep the dashboard feeling "live"
-      refreshInterval: 30000, 
-      fallbackData: {
-        revenue: "₹...", completedOrders: 0, cancelledOrders: 0, avgPrepMinutes: 0, occupancyRate: "...", popularDish: "..."
-      }
-    }
+    { refreshInterval: 30000 }
   );
 
   const { data: activeOrders = [], mutate, isLoading } = useSWR<ActiveOrder[]>(
@@ -111,12 +124,12 @@ function ChefContent() {
 
   const ordersHeading =
     orderView === "all"
-      ? "All Orders"
+      ? t.ordersHeadingAll
       : orderView === "active"
-        ? "Active Orders"
+        ? t.ordersHeadingActive
         : orderView === "previous"
-          ? "Previous Orders"
-          : "Cancelled Orders";
+          ? t.ordersHeadingPrevious
+          : t.ordersHeadingCancelled;
 
   const closeOrder = async (order: ActiveOrder, status: "completed" | "cancelled") => {
     mutate(
@@ -225,70 +238,70 @@ function ChefContent() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen relative">
-      <ChefHeader subtitle="Chef Console" />
+    <div className={`flex flex-col min-h-screen relative ${chefLanguage !== "en" ? "regional-lang" : ""}`}>
+      <ChefHeader subtitle={t.dashboardTitle} />
 
-      <section className="w-full px-4 sm:px-10 pt-5 pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+      <section className="w-full px-4 sm:px-10 pt-5 pb-3 space-y-4">
+        {/* Top Row: Title & Main Views */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {dashboardView === "orders" ? <LayoutGrid size={16} className="text-gold" /> : <BarChart3 size={16} className="text-gold" />}
             <h2 className="text-sm sm:text-base uppercase tracking-[0.2em] font-bold text-black/80 dark:text-white/90">
-              {dashboardView === "orders" ? ordersHeading : "Hotel Analytics"}
+              {dashboardView === "orders" ? ordersHeading : t.hotelAnalytics}
             </h2>
           </div>
 
-          <div className="w-full sm:w-auto flex flex-col items-start sm:items-end gap-2">
-            <div className="w-full sm:w-auto overflow-x-auto no-scrollbar">
-              <div className="flex items-center gap-4 whitespace-nowrap min-w-max">
-                {(
-                  [
-                    { id: "all", label: "ALL" },
-                    { id: "active", label: "ACTIVE ORDER" },
-                    { id: "previous", label: "PREVIOUS ORDER" },
-                    { id: "cancelled", label: "CANCELLED ORDER" },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setOrderView(tab.id);
-                      setDashboardView("orders");
-                    }}
-                    className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] pb-1 transition-colors ${
-                      orderView === tab.id && dashboardView === "orders"
-                        ? "text-gold border-b-2 border-gold"
-                        : "text-black/55 dark:text-white/55 border-b-2 border-transparent"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setDashboardView("orders")}
-                className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] pb-1 transition-colors ${
-                  dashboardView === "orders"
-                    ? "text-gold border-b-2 border-gold"
-                    : "text-black/55 dark:text-white/55 border-b-2 border-transparent"
-                }`}
-              >
-                Orders
-              </button>
-              <button
-                onClick={() => setDashboardView("analytics")}
-                className={`text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] pb-1 transition-colors ${
-                  dashboardView === "analytics"
-                    ? "text-gold border-b-2 border-gold"
-                    : "text-black/55 dark:text-white/55 border-b-2 border-transparent"
-                }`}
-              >
-                Analytics
-              </button>
-            </div>
+          <div className="flex items-center bg-black/5 dark:bg-white/5 p-1 rounded-lg self-start sm:self-auto w-full sm:w-auto">
+            <button
+              onClick={() => setDashboardView("orders")}
+              className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] transition-all ${
+                dashboardView === "orders"
+                  ? "bg-white dark:bg-[#1a1a1a] text-gold shadow-sm"
+                  : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {t.btnOrders}
+            </button>
+            <button
+              onClick={() => setDashboardView("analytics")}
+              className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] transition-all ${
+                dashboardView === "analytics"
+                  ? "bg-white dark:bg-[#1a1a1a] text-gold shadow-sm"
+                  : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {t.btnAnalytics}
+            </button>
           </div>
         </div>
+
+        {/* Bottom Row: Order Status Filters */}
+        {dashboardView === "orders" && (
+          <div className="w-full overflow-x-auto pt-1 pb-1">
+            <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap min-w-max">
+              {(
+                [
+                  { id: "all", label: t.tabAll },
+                  { id: "active", label: t.tabActive },
+                  { id: "previous", label: t.tabPrevious },
+                  { id: "cancelled", label: t.tabCancelled },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setOrderView(tab.id)}
+                  className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] px-4 py-2 rounded-full transition-all ${
+                    orderView === tab.id
+                      ? "bg-gold/10 text-gold border border-gold/20 shadow-sm"
+                      : "bg-transparent text-black/50 dark:text-white/50 border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <main className="flex-1 px-4 sm:px-10 pb-8 sm:pb-10">
@@ -343,38 +356,38 @@ function ChefContent() {
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-[10px] uppercase tracking-[0.2em] text-gold font-bold">Queue #{index + 1}</p>
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-gold font-bold">{t.queue}{index + 1}</p>
                             <p className="text-sm sm:text-base font-bold tracking-wide text-black dark:text-white mt-1">{order.id}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Table</p>
+                            <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">{t.table}</p>
                             <p className="text-lg sm:text-xl font-bold text-black dark:text-white">{order.tableNumber}</p>
                           </div>
                         </div>
 
                         <div className="mt-3 space-y-1 text-xs text-black/65 dark:text-white/65">
-                          <p>Guest: <span className="text-black dark:text-white">{order.guestName}</span></p>
-                          <p>Table Seated: <span className="text-black dark:text-white">{formatTime(order.createdAt)}</span></p>
+                          <p>{t.guest} <span className="text-black dark:text-white">{order.guestName}</span></p>
+                          <p>{t.tableSeated} <span className="text-black dark:text-white">{formatTime(order.createdAt)}</span></p>
                           
                           <div className="pt-1.5 pb-0.5">
-                             <p>Subtotal: <span className="font-bold text-black dark:text-white">₹{orderSubtotal}</span></p>
+                             <p>{t.subtotal} <span className="font-bold text-black dark:text-white">₹{orderSubtotal}</span></p>
                              <p>GST ({gstRate}%): <span className="font-bold text-black dark:text-white">₹{orderGst}</span></p>
-                             <p className="mt-0.5">Total Bill: <span className="text-gold font-bold text-sm">₹{order.total}</span></p>
+                             <p className="mt-0.5">{t.totalBill} <span className="text-gold font-bold text-sm">₹{order.total}</span></p>
                           </div>
 
                           {order.generalNote ? (
                             <p className="text-amber-700 dark:text-amber-300 bg-amber-500/10 p-2 rounded mt-1">
-                              Note: {order.generalNote}
+                              {t.note} {order.generalNote}
                             </p>
                           ) : null}
                         </div>
 
                         <div className="mt-3.5 border-t border-black/10 dark:border-white/10 pt-3">
                           <div className="flex justify-between items-center mb-2">
-                            <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Order Items</p>
+                            <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">{t.orderItems}</p>
                             {pendingOrderCount === 0 && order.items.length > 0 && (
                               <span className="text-[9px] uppercase tracking-widest text-green-600 dark:text-green-400 font-bold">
-                                All Served
+                                {t.allServed}
                               </span>
                             )}
                           </div>
@@ -436,13 +449,13 @@ function ChefContent() {
                             onClick={() => openPaymentModal(order)}
                             className="h-9 rounded-lg border border-green-600/30 bg-green-600/15 text-green-700 dark:text-green-300 text-[10px] uppercase tracking-[0.14em] font-bold hover:bg-green-600/25 transition-colors cursor-pointer"
                           >
-                            Close Table
+                            {t.closeTable}
                           </button>
                           <button
                             onClick={() => closeOrder(order, "cancelled")}
                             className="h-9 rounded-lg border border-red-600/30 bg-red-600/15 text-red-700 dark:text-red-300 text-[10px] uppercase tracking-[0.14em] font-bold hover:bg-red-600/25 transition-colors cursor-pointer"
                           >
-                            Cancel Table
+                            {t.cancelTable}
                           </button>
                         </div>
                       </article>
@@ -451,7 +464,7 @@ function ChefContent() {
                 </div>
               ) : (
                 <div className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-7 text-center text-sm text-black/60 dark:text-white/60">
-                  No active orders in queue.
+                  {t.noActiveOrders}
                 </div>
               )}
             </section>
@@ -468,13 +481,13 @@ function ChefContent() {
                   <div className="flex items-center gap-2 mb-3.5">
                     <CheckCircle2 size={15} className="text-green-600" />
                     <h3 className="text-[11px] sm:text-xs uppercase tracking-[0.18em] font-bold text-black/80 dark:text-white/90">
-                      Previous Orders
+                      {t.ordersHeadingPrevious}
                     </h3>
                   </div>
 
                   <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                     {previousOrders.length === 0 ? (
-                      <p className="text-xs text-black/55 dark:text-white/55">No completed orders yet.</p>
+                      <p className="text-xs text-black/55 dark:text-white/55">{t.noCompletedOrders}</p>
                     ) : (
                       previousOrders.map((order) => (
                         <div
@@ -490,11 +503,11 @@ function ChefContent() {
                               onClick={() => restoreOrder(order)}
                               className="text-[9px] uppercase tracking-widest text-gold hover:text-amber-500 transition-colors font-bold cursor-pointer"
                             >
-                              Restore
+                              {t.restore}
                             </button>
                           </div>
                           <div className="mt-1 text-[11px] text-black/60 dark:text-white/60">
-                            Completed at {formatTime(order.closedAt)}
+                            {t.completedAt} {formatTime(order.closedAt)}
                           </div>
                         </div>
                       ))
@@ -508,13 +521,13 @@ function ChefContent() {
                   <div className="flex items-center gap-2 mb-3.5">
                     <XCircle size={15} className="text-red-600" />
                     <h3 className="text-[11px] sm:text-xs uppercase tracking-[0.18em] font-bold text-black/80 dark:text-white/90">
-                      Cancelled Orders
+                      {t.ordersHeadingCancelled}
                     </h3>
                   </div>
 
                   <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                     {cancelledOrders.length === 0 ? (
-                      <p className="text-xs text-black/55 dark:text-white/55">No cancelled orders.</p>
+                      <p className="text-xs text-black/55 dark:text-white/55">{t.noCancelledOrders}</p>
                     ) : (
                       cancelledOrders.map((order) => (
                         <div
@@ -530,11 +543,11 @@ function ChefContent() {
                               onClick={() => restoreOrder(order)}
                               className="text-[9px] uppercase tracking-widest text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors font-bold cursor-pointer"
                             >
-                              Restore
+                              {t.restore}
                             </button>
                           </div>
                           <div className="mt-1 text-[11px] text-black/60 dark:text-white/60">
-                            Cancelled at {formatTime(order.closedAt)}
+                            {t.cancelledAt} {formatTime(order.closedAt)}
                           </div>
                         </div>
                       ))
@@ -550,86 +563,97 @@ function ChefContent() {
               <div className="flex justify-end">
                 
 
-              <div className="grid grid-cols-2 sm:flex gap-2">
+              <div className="flex w-full overflow-x-auto scrollbar-hide sm:w-auto gap-2">
                   {(["daily", "weekly", "monthly", "yearly"] as const).map((window) => (
                     <button
                       key={window}
                       onClick={() => setAnalyticsWindow(window)}
-                      className={`h-9 px-3 rounded-lg text-[10px] sm:text-xs uppercase tracking-[0.16em] font-bold border transition-colors ${
+                      className={`flex-1 sm:flex-none h-9 px-2 sm:px-3 rounded-lg text-[9px] sm:text-xs uppercase tracking-[0.12em] sm:tracking-[0.16em] font-bold border transition-colors whitespace-nowrap ${
                         analyticsWindow === window
                           ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
                           : "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 text-black/65 dark:text-white/65"
                       }`}
                     >
-                      {window}
+                      {t[window as keyof typeof t]}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Add a subtle pulse effect while loading new time windows */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 transition-opacity duration-300 ${isAnalyticsLoading ? "opacity-60" : "opacity-100"}`}>
-                <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">Revenue</p>
-                  <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.revenue}</p>
-                </article>
+              {/* Analytics Dashboard Grid */}
+              {isAnalyticsLoading || !currentAnalytics ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <article key={i} className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4 sm:p-5 animate-pulse">
+                      <div className="w-24 h-3 bg-black/10 dark:bg-white/10 rounded mb-4"></div>
+                      <div className="w-20 h-7 bg-black/10 dark:bg-white/10 rounded"></div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 transition-opacity duration-300">
+                  <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-black/45 dark:text-white/45">{t.revenue}</p>
+                    <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.revenue}</p>
+                  </article>
 
-                <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
-                    <ReceiptText size={14} />
-                    <p className="text-[10px] uppercase tracking-widest">Completed Orders</p>
-                  </div>
-                  <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.completedOrders}</p>
-                </article>
+                  <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
+                      <ReceiptText size={14} />
+                      <p className="text-[10px] uppercase tracking-widest">{t.completedOrdersAnalytics}</p>
+                    </div>
+                    <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.completedOrders}</p>
+                  </article>
 
-                <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
-                    <XCircle size={14} />
-                    <p className="text-[10px] uppercase tracking-widest">Cancelled Orders</p>
-                  </div>
-                  <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.cancelledOrders}</p>
-                </article>
+                  <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
+                      <XCircle size={14} />
+                      <p className="text-[10px] uppercase tracking-widest">{t.cancelledOrdersAnalytics}</p>
+                    </div>
+                    <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.cancelledOrders}</p>
+                  </article>
 
-                <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
-                    <Clock3 size={14} />
-                    <p className="text-[10px] uppercase tracking-widest">Avg Prep Time</p>
-                  </div>
-                  <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.avgPrepMinutes} min</p>
-                </article>
+                  <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
+                      <Clock3 size={14} />
+                      <p className="text-[10px] uppercase tracking-widest">{t.avgPrepTime}</p>
+                    </div>
+                    <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.avgPrepMinutes} min</p>
+                  </article>
 
-                <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
-                    <Landmark size={14} />
-                    <p className="text-[10px] uppercase tracking-widest">Occupancy Rate</p>
-                  </div>
-                  <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.occupancyRate}</p>
-                </article>
+                  <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
+                      <Landmark size={14} />
+                      <p className="text-[10px] uppercase tracking-widest">{t.occupancyRate}</p>
+                    </div>
+                    <p className="mt-2 text-2xl font-bold text-black dark:text-white">{currentAnalytics.occupancyRate}</p>
+                  </article>
 
-                <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
-                    <Layers size={14} />
-                    <p className="text-[10px] uppercase tracking-widest">Most Ordered</p>
-                  </div>
-                  <p className="mt-2 text-lg sm:text-xl font-bold text-black dark:text-white truncate" title={currentAnalytics.popularDish}>
-                    {currentAnalytics.popularDish}
-                  </p>
-                </article>
-              </div>
+                  <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-black/45 dark:text-white/45">
+                      <Layers size={14} />
+                      <p className="text-[10px] uppercase tracking-widest">{t.mostOrdered}</p>
+                    </div>
+                    <p className="mt-2 text-lg sm:text-xl font-bold text-black dark:text-white truncate" title={currentAnalytics.popularDish}>
+                      {currentAnalytics.popularDish}
+                    </p>
+                  </article>
+                </div>
+              )}
 
               <article className="bg-glass border border-black/10 dark:border-white/10 rounded-xl p-4 sm:p-5">
                 <div className="flex items-center gap-2 text-black/55 dark:text-white/55">
                   <CalendarClock size={14} />
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-bold">Performance Note</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] font-bold">{t.performanceNote}</p>
                 </div>
                 <p className="mt-3 text-sm text-black/75 dark:text-white/75 leading-relaxed">
                   {analyticsWindow === "daily"
-                    ? "Today shows healthy throughput with low cancellation rate. Monitor prep times for table clusters during peak lunch windows."
+                    ? t.perfDaily
                     : analyticsWindow === "weekly"
-                      ? "Weekly trend is stable with strong occupancy. Focus on staffing balance for weekend evening rush to reduce prep delay."
+                      ? t.perfWeekly
                       : analyticsWindow === "monthly"
-                        ? "Monthly numbers indicate sustained demand. Consider optimizing inventory for best-selling dishes to avoid stockouts."
-                        : "Yearly data reflects strong retention and high service consistency. Continue tracking prep-time outliers across seasonal peaks."}
+                        ? t.perfMonthly
+                        : t.perfYearly}
                 </p>
               </article>
             </section>
@@ -649,7 +673,7 @@ function ChefContent() {
             </button>
             
             <div className="mb-6 mt-2">
-               <h3 className="text-xl font-serif italic text-black dark:text-white">Checkout Table {paymentOrder.tableNumber}</h3>
+               <h3 className="text-xl font-serif italic text-black dark:text-white">{t.checkoutTable} {paymentOrder.tableNumber}</h3>
                <p className="text-xs text-black/50 dark:text-white/50 font-light mt-1">
                   Guest: {paymentOrder.guestName}
                </p>
@@ -677,7 +701,7 @@ function ChefContent() {
                     : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
                 }`}
               >
-                <MessageCircle size={14} /> WhatsApp
+                <MessageCircle size={14} /> {t.whatsapp}
               </button>
               <button
                 onClick={() => setPaymentTab("email")}
@@ -687,7 +711,7 @@ function ChefContent() {
                     : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
                 }`}
               >
-                <Mail size={14} /> Email
+                <Mail size={14} /> {t.email}
               </button>
               <button
                 onClick={() => setPaymentTab("external")}
@@ -697,7 +721,7 @@ function ChefContent() {
                     : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
                 }`}
               >
-                <Banknote size={14} /> Cash/Card
+                <Banknote size={14} /> {t.cashCard}
               </button>
             </div>
 
@@ -706,7 +730,7 @@ function ChefContent() {
               {paymentTab === "whatsapp" && (
                 <div className="space-y-3">
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 ml-1">
-                     WhatsApp Number
+                     {t.whatsappNumber}
                   </label>
                   <input
                     type="tel"
@@ -720,7 +744,7 @@ function ChefContent() {
                     disabled={!paymentPhone}
                     className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-500/50 text-white font-bold uppercase tracking-[0.1em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2"
                   >
-                    Send Bill & Close Table
+                    Send Bill & {t.closeTable}
                   </button>
                 </div>
               )}
@@ -728,7 +752,7 @@ function ChefContent() {
               {paymentTab === "email" && (
                 <div className="space-y-3">
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 ml-1">
-                     Email Address
+                     {t.emailAddress}
                   </label>
                   <input
                     type="email"
@@ -742,7 +766,7 @@ function ChefContent() {
                     disabled={!paymentEmail}
                     className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white font-bold uppercase tracking-[0.1em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2"
                   >
-                    Send Receipt & Close Table
+                    Send Receipt & {t.closeTable}
                   </button>
                 </div>
               )}
@@ -758,7 +782,7 @@ function ChefContent() {
                     onClick={() => closeOrder(paymentOrder, "completed")}
                     className="w-full bg-gold hover:bg-gold/90 text-white font-bold uppercase tracking-[0.1em] text-[10px] sm:text-xs py-3.5 rounded-xl transition-all shadow-md cursor-pointer mt-2"
                   >
-                    Mark as Paid & Close Table
+                    Mark as Paid & {t.closeTable}
                   </button>
                 </div>
               )}

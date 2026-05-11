@@ -75,6 +75,7 @@ body {
 /* Custom Thin Scrollbar */
 ::-webkit-scrollbar {
   width: 2px;
+  height: 2px;
 }
 
 ::-webkit-scrollbar-track {
@@ -103,5 +104,10 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(197, 160, 89, 0.2) transparent;
+}
+
+/* Fix Letter Spacing for Regional Languages (Hindi, Marathi, Gujarati) */
+.regional-lang * {
+  letter-spacing: normal !important;
 }
 
