@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { usePathname } from "next/navigation"; 
 import { useTheme } from "@/components/ThemeProvider";
-import { Bell, Volume2, VolumeX, X } from "lucide-react";
+import { Bell, Volume2, VolumeX, X, Settings, LayoutDashboard } from "lucide-react";
 import { getServiceRequests, markRequestsAsResolved } from "@/actions/requests";
 
 interface ServiceRequest {
@@ -137,12 +137,14 @@ export default function ChefHeader({ subtitle = "Chef Console" }: { subtitle?: s
           
           {/* ✅ Smart Navigation Toggle */}
           {pathname === "/chef/settings" ? (
-            <a href="/chef" className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60 hover:text-gold transition">
-              Dashboard
+            <a href="/chef" className="flex items-center justify-center sm:gap-1.5 w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60 hover:text-gold transition">
+              <LayoutDashboard size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Dashboard</span>
             </a>
           ) : (
-            <a href="/chef/settings" className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60 hover:text-gold transition">
-              Settings
+            <a href="/chef/settings" className="flex items-center justify-center sm:gap-1.5 w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] uppercase tracking-widest text-black/60 dark:text-white/60 hover:text-gold transition">
+              <Settings size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Settings</span>
             </a>
           )}
 
@@ -162,7 +164,7 @@ export default function ChefHeader({ subtitle = "Chef Console" }: { subtitle?: s
             </button>
 
             {isNotifOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#111] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] sm:max-w-none bg-white dark:bg-[#111] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
                 <div className="p-3 border-b border-black/5 dark:border-white/5 bg-gray-50 dark:bg-[#1a1a1a] flex justify-between items-center">
                   <h4 className="text-xs font-bold uppercase tracking-widest text-black/80 dark:text-white/80">Waiter Requests</h4>
                   <button
