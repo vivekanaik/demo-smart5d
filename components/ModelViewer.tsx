@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -10,9 +11,10 @@ interface ModelViewerProps {
   ingredients?: string[];
   nutrition?: any;
   showInteractiveUI?: boolean; // True for fullscreen fallback
+  scale?: string; // e.g. "0.5 0.5 0.5"
 }
 
-export default function ModelViewer({ src, alt, poster, id, ingredients, nutrition, showInteractiveUI }: ModelViewerProps) {
+export default function ModelViewer({ src, alt, poster, id, ingredients, nutrition, showInteractiveUI, scale = "0.5 0.5 0.5" }: ModelViewerProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [shouldLoadModel, setShouldLoadModel] = useState(false);
   const [isArActive, setIsArActive] = useState(false);
@@ -107,6 +109,7 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           'ar-placement': 'floor',
           'ar-scale': 'fixed',
           'camera-orbit': '0deg 75deg auto',
+          scale: scale,
           reveal: 'auto',
           className: "w-full h-full bg-transparent outline-none",
           style: { width: '100%', height: '100%', backgroundColor: 'transparent' }

@@ -971,7 +971,7 @@ export default function SmartMenuPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-black/50 dark:text-white/50 mb-1.5 ml-1">
-                    Number (Optional)
+                    Number (If you want to recieve bill on WhatsApp)
                   </label>
                   <input
                     type="tel"

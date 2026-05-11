@@ -55,6 +55,8 @@ export const settings = pgTable("settings", {
     id: integer("id").primaryKey().default(1), // Always 1
     gstRate: integer("gst_rate").default(5).notNull(), // 0, 5, or 18
     adminPassword: varchar("admin_password", { length: 255 }).default("admin123").notNull(), 
+    upiId: varchar("upi_id", { length: 100 }),
+    qrCodeUrl: text("qr_code_url"), // Store base64 string
 });
 
 export const serviceRequests = pgTable('service_requests', {

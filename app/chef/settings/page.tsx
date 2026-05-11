@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ import {
   ArrowLeft, Eye, Image as ImageIcon, Bell 
 } from "lucide-react";
 import { 
-  getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getSettings, updateGstRate, updatePassword 
+  getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getSettings, updateGstRate, updatePassword, updateBillingSettings 
 } from "@/actions/settings";
 import ChefHeader from "@/components/ChefHeader";
 
@@ -75,15 +76,21 @@ export default function SettingsPage() {
   });
   const [newPassword, setNewPassword] = useState("");
   const [gstRate, setGstRate] = useState<number>(5);
+  const [upiId, setUpiId] = useState("");
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
 
   // --- NOTIFICATION STATE ---
   const [waiterRequests, setWaiterRequests] = useState<WaiterRequest[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [latestToast, setLatestToast] = useState<number | null>(null);
 
-  // Initialize GST rate when settings load
+  // Initialize settings
   React.useEffect(() => {
-    if (settings) setGstRate(settings.gstRate);
+    if (settings) {
+      setGstRate(settings.gstRate);
+      if (settings.upiId) setUpiId(settings.upiId);
+      if (settings.qrCodeUrl) setQrCodeBase64(settings.qrCodeUrl);
+    }
   }, [settings]);
 
   // --- NOTIFICATION LOGIC ---
@@ -175,10 +182,27 @@ export default function SettingsPage() {
     }
   };
 
-  const handleGstUpdate = async () => {
+  const handleBillingUpdate = async () => {
     await updateGstRate(gstRate);
+    await updateBillingSettings(upiId, qrCodeBase64);
     mutateSettings();
-    alert("GST Rate updated successfully!");
+    alert("Billing Settings updated successfully!");
+  };
+
+  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1048576) { // 1 MB limit
+        alert("Image is too large! Please upload an image smaller than 1MB.");
+        e.target.value = ""; // Clear the input
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setQrCodeBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -318,7 +342,37 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <button onClick={handleGstUpdate} className="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 hover:opacity-80 transition shadow-md">
+              <div className="space-y-3 pt-4 border-t border-black/10 dark:border-white/10">
+                <h4 className="text-sm font-bold text-black dark:text-white">Payment Details</h4>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-black/60 dark:text-white/60">UPI ID</label>
+                  <input 
+                    type="text" 
+                    value={upiId} 
+                    onChange={(e) => setUpiId(e.target.value)} 
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-2.5 px-3 rounded-lg text-sm focus:outline-none focus:border-gold text-black dark:text-white transition-all"
+                    placeholder="e.g. yourname@upi"
+                  />
+                </div>
+                <div className="space-y-2 pt-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-black/60 dark:text-white/60">Payment QR Code</label>
+                  <div className="flex flex-col gap-3">
+                    {qrCodeBase64 && (
+                      <div className="w-24 h-24 border border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-white">
+                        <img src={qrCodeBase64} alt="QR Code" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleQrUpload}
+                      className="text-xs text-black/60 dark:text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-gold/10 file:text-gold hover:file:bg-gold/20"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button onClick={handleBillingUpdate} className="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 hover:opacity-80 transition shadow-md">
                 <Save size={16} /> Save Billing Settings
               </button>
             </div>

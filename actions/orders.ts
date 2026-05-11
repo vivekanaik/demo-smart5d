@@ -106,3 +106,16 @@ export async function updateOrderItemStatus(itemId: number, status: "pending" | 
     return { success: false };
   }
 }
+
+// Get details for a specific order (for the bill page)
+export async function getOrderDetails(orderId: string) {
+  try {
+    return await db.query.orders.findFirst({
+      where: eq(orders.id, orderId),
+      with: { items: true },
+    });
+  } catch (error) {
+    console.error("Failed to fetch order details:", error);
+    return null;
+  }
+}

@@ -196,9 +196,12 @@ function ChefContent() {
     const itemsText = paymentOrder.items.map(i => `- ${i.name} x${i.quantity}`).join("%0A");
     const subtotal = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
     const gstAmount = Math.round(subtotal * (gstRate / 100));
-    const upiLink = `upi://pay?pa=merchant@upi&pn=The%20Obsidian%20Palace&am=${paymentOrder.total}&cu=INR`;
     
-    const text = `Hello ${paymentOrder.guestName}, thank you for dining at The Obsidian Palace! 🏰%0A%0A*Bill Summary (Table ${paymentOrder.tableNumber})*%0A${itemsText}%0A------------------%0A*Subtotal: ₹${subtotal}*%0A*GST (${gstRate}%): ₹${gstAmount}*%0A*Grand Total: ₹${paymentOrder.total}*%0A%0AClick here to pay instantly via UPI: ${upiLink}`;
+    // Use dynamic settings if available, else fallback
+    const upiLink = settings?.upiId ? `upi://pay?pa=${settings.upiId}&pn=Restaurant&am=${paymentOrder.total}&cu=INR` : "";
+    const billUrl = `${window.location.origin}/bill/${paymentOrder.id}`;
+    
+    const text = `Hello ${paymentOrder.guestName || "Guest"}, thank you for dining at The Obsidian Palace! 🏰%0A%0A*Bill Summary (Table ${paymentOrder.tableNumber})*%0A${itemsText}%0A------------------%0A*Subtotal: ₹${subtotal}*%0A*GST (${gstRate}%): ₹${gstAmount}*%0A*Grand Total: ₹${paymentOrder.total}*%0A%0A🧾 View your digital bill here: ${billUrl}%0A${upiLink ? `%0A💸 Pay instantly via UPI: ${upiLink}` : ""}`;
     
     window.open(`https://wa.me/${paymentPhone}?text=${text}`, "_blank");
     closeOrder(paymentOrder, "completed");
@@ -210,10 +213,12 @@ function ChefContent() {
     const itemsText = paymentOrder.items.map(i => `- ${i.name} x${i.quantity}`).join("%0D%0A");
     const subtotal = paymentOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
     const gstAmount = Math.round(subtotal * (gstRate / 100));
-    const upiLink = `upi://pay?pa=merchant@upi&pn=The%20Obsidian%20Palace&am=${paymentOrder.total}&cu=INR`;
+    
+    const upiLink = settings?.upiId ? `upi://pay?pa=${settings.upiId}&pn=Restaurant&am=${paymentOrder.total}&cu=INR` : "";
+    const billUrl = `${window.location.origin}/bill/${paymentOrder.id}`;
     
     const subject = `Your Bill from The Obsidian Palace - Table ${paymentOrder.tableNumber}`;
-    const body = `Hello ${paymentOrder.guestName},%0D%0A%0D%0AThank you for dining with us!%0D%0A%0D%0ABill Summary:%0D%0A${itemsText}%0D%0A------------------%0D%0ASubtotal: ₹${subtotal}%0D%0AGST (${gstRate}%): ₹${gstAmount}%0D%0AGrand Total: ₹${paymentOrder.total}%0D%0A%0D%0APay via UPI: ${upiLink}`;
+    const body = `Hello ${paymentOrder.guestName || "Guest"},%0D%0A%0D%0AThank you for dining with us!%0D%0A%0D%0ABill Summary:%0D%0A${itemsText}%0D%0A------------------%0D%0ASubtotal: ₹${subtotal}%0D%0AGST (${gstRate}%): ₹${gstAmount}%0D%0AGrand Total: ₹${paymentOrder.total}%0D%0A%0D%0A🧾 View your digital bill here: ${billUrl}%0D%0A${upiLink ? `%0D%0A💸 Pay via UPI: ${upiLink}` : ""}`;
     
     window.open(`mailto:${paymentEmail}?subject=${subject}&body=${body}`, "_blank");
     closeOrder(paymentOrder, "completed");

@@ -59,7 +59,7 @@ async function ensureSettingsExist() {
 export async function getSettings() {
   await ensureSettingsExist();
   const data = await db.query.settings.findFirst();
-  return data || { gstRate: 5, adminPassword: "admin" };
+  return data || { id: 1, gstRate: 5, adminPassword: "admin", upiId: null, qrCodeUrl: null };
 }
 
 export async function updateGstRate(rate: number) {
@@ -80,6 +80,17 @@ export async function updatePassword(newPassword: string) {
     return { success: true };
   } catch (error) {
     console.error("Failed to update password:", error);
+    return { success: false };
+  }
+}
+
+export async function updateBillingSettings(upiId: string, qrCodeUrl: string | null) {
+  try {
+    await ensureSettingsExist();
+    await db.update(settings).set({ upiId, qrCodeUrl }).where(eq(settings.id, 1));
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update billing settings:", error);
     return { success: false };
   }
 }
