@@ -9,9 +9,9 @@ export default async function AdminPOSPage() {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4">
+    <div className="flex h-full flex-col space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">POS Billing</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-3xl">POS Billing</h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Create new orders and send them to the kitchen.</p>
       </div>
       

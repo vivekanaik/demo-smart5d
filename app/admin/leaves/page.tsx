@@ -9,14 +9,14 @@ export default async function AdminLeavesPage() {
     getHolidays(),
   ]);
 
-  const employees = (empResult.success ? empResult.employees : []).map(e => ({
+  const employees = (empResult.success ? empResult.employees ?? [] : []).map(e => ({
     id: e.id,
     name: e.name,
     role: e.role,
   }));
 
-  const leaves = (leavesResult.success ? leavesResult.leaves : []) as any[];
-  const holidays = (holidaysResult.success ? holidaysResult.holidays : []) as any[];
+  const leaves = (leavesResult.success ? leavesResult.leaves ?? [] : []) as any[];
+  const holidays = (holidaysResult.success ? holidaysResult.holidays ?? [] : []) as any[];
 
   return (
     <LeavesPageClient

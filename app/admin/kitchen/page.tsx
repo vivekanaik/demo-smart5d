@@ -16,7 +16,7 @@ export default async function AdminKitchenPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Kitchen Display</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-3xl">Kitchen Display</h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">Live order tickets for the chefs. Oldest tickets appear first.</p>
         </div>
       </div>

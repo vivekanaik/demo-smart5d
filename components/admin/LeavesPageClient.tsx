@@ -85,7 +85,7 @@ function NewLeaveModal({ employees, onClose }: { employees: Employee[]; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-6">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">New Leave Request</h2>
           <button onClick={onClose} className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
@@ -113,7 +113,7 @@ function NewLeaveModal({ employees, onClose }: { employees: Employee[]; onClose:
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Start Date *</label>
               <input type="date" value={form.startDate} onChange={(e) => setForm(f => ({ ...f, startDate: e.target.value }))}
@@ -142,7 +142,7 @@ function NewLeaveModal({ employees, onClose }: { employees: Employee[]; onClose:
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button onClick={onClose} className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
               Cancel
             </button>
@@ -178,7 +178,7 @@ function AddHolidayModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-6">
+      <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Add Holiday</h2>
           <button onClick={onClose} className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
@@ -204,7 +204,7 @@ function AddHolidayModal({ onClose }: { onClose: () => void }) {
             </select>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button onClick={onClose} className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
             <button onClick={handleSubmit} disabled={isPending}
               className="flex-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
@@ -273,26 +273,26 @@ export function LeavesPageClient({
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Leaves & Holidays</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-3xl">Leaves & Holidays</h1>
             <p className="text-zinc-500 dark:text-zinc-400 mt-1">Manage staff time off and public holidays.</p>
           </div>
           <button onClick={() => setShowNewLeave(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium transition-colors">
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-600 sm:w-auto">
             <Plus className="h-4 w-4" /> New Leave Request
           </button>
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {[
             { label: "Total Requests", value: leaves.length, color: "text-zinc-900 dark:text-zinc-100" },
             { label: "Pending", value: leaves.filter(l => l.status === "pending").length, color: "text-amber-600 dark:text-amber-400" },
             { label: "On Leave Today", value: onLeave.length, color: "text-red-600 dark:text-red-400" },
             { label: "Upcoming Holidays", value: upcomingHolidays.length, color: "text-yellow-600 dark:text-yellow-400" },
           ].map(card => (
-            <div key={card.label} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-sm">
+            <div key={card.label} className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-4">
               <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">{card.label}</p>
-              <p className={`text-3xl font-bold mt-1 ${card.color}`}>{card.value}</p>
+              <p className={`mt-1 text-2xl font-bold sm:text-3xl ${card.color}`}>{card.value}</p>
             </div>
           ))}
         </div>
@@ -375,7 +375,7 @@ export function LeavesPageClient({
               <CalendarDays className="h-5 w-5 text-yellow-500" />
               <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">Leave Requests</h3>
             </div>
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm text-left">
                 <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
                   <tr>
@@ -446,6 +446,74 @@ export function LeavesPageClient({
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="divide-y divide-zinc-200 dark:divide-zinc-800 md:hidden">
+              {leaves.length === 0 ? (
+                <div className="px-4 py-12 text-center text-sm text-zinc-500">No leave requests yet.</div>
+              ) : (
+                leaves.map(leave => {
+                  const days = differenceInDays(new Date(leave.endDate), new Date(leave.startDate)) + 1;
+                  return (
+                    <div key={leave.id} className="space-y-4 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium text-zinc-900 dark:text-zinc-100">{leave.user?.name ?? "—"}</p>
+                          <p className="text-xs capitalize text-zinc-500">{leave.user?.role}</p>
+                        </div>
+                        <span className={cn(
+                          "inline-flex flex-shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                          leave.status === "pending" && "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+                          leave.status === "approved" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+                          leave.status === "rejected" && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                        )}>
+                          {leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Type</p>
+                          <p className="mt-1 text-zinc-900 dark:text-zinc-100">
+                            {LEAVE_TYPES.find(t => t.value === leave.leaveType)?.label}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Duration</p>
+                          <p className="mt-1 text-zinc-900 dark:text-zinc-100">{days} day{days > 1 ? "s" : ""}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Dates</p>
+                          <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+                            {format(new Date(leave.startDate), "MMM d")} - {format(new Date(leave.endDate), "MMM d, yyyy")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2">
+                        {leave.status === "pending" && (
+                          <>
+                            <button onClick={() => handleStatusChange(leave.id, "approved")} disabled={isPending}
+                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-green-200 px-3 py-2 text-sm text-green-700 transition-colors hover:bg-green-50 disabled:opacity-60 dark:border-green-900/40 dark:text-green-400 dark:hover:bg-green-900/20">
+                              <Check className="h-4 w-4" />
+                              Approve
+                            </button>
+                            <button onClick={() => handleStatusChange(leave.id, "rejected")} disabled={isPending}
+                              className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20">
+                              <XCircle className="h-4 w-4" />
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        <button onClick={() => handleDeleteLeave(leave.id)} disabled={isPending}
+                          className="inline-flex items-center justify-center rounded-md border border-zinc-200 px-3 py-2 text-red-500 transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-zinc-800 dark:hover:bg-red-900/20">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

@@ -56,7 +56,7 @@ function AddEmployeeModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-6">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Add New Employee</h2>
           <button onClick={onClose} className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
@@ -82,7 +82,7 @@ function AddEmployeeModal({ onClose }: { onClose: () => void }) {
             </div>
           ))}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Role</label>
               <select value={form.role} onChange={(e) => setForm(f => ({ ...f, role: e.target.value as any }))}
@@ -101,7 +101,7 @@ function AddEmployeeModal({ onClose }: { onClose: () => void }) {
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button onClick={onClose} className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
               Cancel
             </button>
@@ -156,7 +156,7 @@ function EditEmployeeModal({ employee, onClose, onUndoPaid }: { employee: Employ
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-6">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Edit Employee</h2>
           <button onClick={onClose} className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
@@ -180,7 +180,7 @@ function EditEmployeeModal({ employee, onClose, onUndoPaid }: { employee: Employ
             <input type="number" value={form.salary} onChange={(e) => setForm(f => ({ ...f, salary: e.target.value }))}
               className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-yellow-500 focus:outline-none" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Role</label>
               <select value={form.role} onChange={(e) => setForm(f => ({ ...f, role: e.target.value as any }))}
@@ -216,7 +216,7 @@ function EditEmployeeModal({ employee, onClose, onUndoPaid }: { employee: Employ
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button onClick={onClose} className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
               Cancel
             </button>
@@ -319,7 +319,7 @@ export function EmployeesTable({
       )}
 
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
             <input type="text" placeholder="Search by name or email..."
@@ -327,22 +327,24 @@ export function EmployeesTable({
               className="h-10 w-full rounded-md border border-zinc-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-yellow-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-yellow-500"
             />
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-zinc-500" />
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 flex-shrink-0 text-zinc-500" />
             <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
-              className="admin-select h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-yellow-500">
+              className="admin-select h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-yellow-500 sm:w-auto">
               <option value="all">All Roles</option>
               {ROLES.map(r => <option key={r} value={r} className="capitalize">{r}</option>)}
             </select>
+            </div>
             <button onClick={onAdd}
-              className="flex items-center gap-2 h-10 px-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md text-sm font-medium transition-colors">
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-yellow-500 px-4 text-sm font-medium text-white transition-colors hover:bg-yellow-600 sm:w-auto">
               <Plus className="h-4 w-4" /> Add
             </button>
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm text-left">
               <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
                 <tr>
@@ -431,6 +433,86 @@ export function EmployeesTable({
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-800 md:hidden">
+            {filtered.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-zinc-500">
+                No employees found.
+              </div>
+            ) : (
+              filtered.map((emp) => {
+                const salarySentThisMonth = isSalaryPaidThisMonth(emp.salaryPaidAt);
+                return (
+                  <div key={emp.id} className="space-y-4 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 text-sm font-bold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        {emp.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-zinc-900 dark:text-zinc-100">{emp.name}</p>
+                        <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">{emp.email}</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{emp.phone || "N/A"}</p>
+                      </div>
+                      <span className={cn(
+                        "inline-flex flex-shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        emp.status === "active" && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+                        emp.status === "inactive" && "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400",
+                        emp.status === "on_leave" && "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                      )}>
+                        {emp.status.replace("_", " ")}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Role</p>
+                        <p className="mt-1 capitalize text-zinc-900 dark:text-zinc-100">{emp.role}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Salary</p>
+                        <p className="mt-1 font-semibold text-zinc-900 dark:text-zinc-100">
+                          {emp.salary ? `₹${emp.salary.toLocaleString()}` : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      {emp.salary ? (
+                        salarySentThisMonth ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
+                            <CheckCircle className="h-4 w-4" /> Paid this month
+                          </span>
+                        ) : (
+                          <button onClick={() => handleMarkPaid(emp.id)} disabled={payingId === emp.id}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-red-500 transition-colors hover:text-red-700 disabled:opacity-70 dark:text-red-400 dark:hover:text-red-300">
+                            {payingId === emp.id
+                              ? <Clock className="h-4 w-4 animate-spin" />
+                              : <Clock className="h-4 w-4" />
+                            }
+                            {payingId === emp.id ? "Paying..." : "Mark as Paid"}
+                          </button>
+                        )
+                      ) : (
+                        <span className="text-xs text-zinc-400">No salary set</span>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setEditingEmployee(emp)}
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900">
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </button>
+                        <button onClick={() => setDeletingId(emp.id)}
+                          className="inline-flex items-center justify-center rounded-md border border-zinc-200 px-3 py-2 text-red-500 transition-colors hover:bg-red-50 dark:border-zinc-800 dark:hover:bg-red-900/20">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

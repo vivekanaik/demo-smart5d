@@ -76,10 +76,10 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
   };
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] gap-6">
+    <div className="flex flex-col gap-4 lg:h-[calc(100vh-6rem)] lg:flex-row lg:gap-6">
       
       {/* Left Menu Grid */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="flex min-h-[60vh] flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:min-h-0">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
@@ -109,8 +109,8 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 sm:gap-4">
             {filteredItems.map(item => (
               <MenuItemCard key={item.id} item={item} onAdd={addToCart} />
             ))}
@@ -119,7 +119,7 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
       </div>
 
       {/* Right Cart Sidebar */}
-      <div className="w-96 flex flex-col bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <div className="flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:w-96">
         
         {/* Guest & Table Info */}
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-4 bg-zinc-50 dark:bg-zinc-900/50">

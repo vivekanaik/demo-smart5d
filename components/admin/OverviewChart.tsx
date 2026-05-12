@@ -14,8 +14,8 @@ const data = [
 
 export function OverviewChart() {
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={data} margin={{ top: 10, right: 4, left: -28, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#3f3f46" opacity={0.2} />
         <XAxis
           dataKey="name"
@@ -36,7 +36,7 @@ export function OverviewChart() {
           cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }}
           contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }}
           itemStyle={{ color: '#10b981' }}
-          formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]}
+          formatter={(value) => [`₹${Number(value ?? 0).toLocaleString()}`, "Revenue"]}
         />
         <Bar
           dataKey="total"

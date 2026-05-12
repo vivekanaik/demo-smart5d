@@ -43,8 +43,8 @@ function InventoryForm({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Item Name *</label>
           <input type="text" placeholder="e.g. Basmati Rice" value={form.itemName}
             onChange={(e) => setForm((f: any) => ({ ...f, itemName: e.target.value }))}
@@ -82,14 +82,14 @@ function InventoryForm({
           </select>
         </div>
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Vendor / Supplier</label>
           <input type="text" placeholder="e.g. Metro Cash & Carry" value={form.vendorName}
             onChange={(e) => setForm((f: any) => ({ ...f, vendorName: e.target.value }))}
             className={inputCls} />
         </div>
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             Last Restocked Date
           </label>
@@ -137,7 +137,7 @@ function AddInventoryModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Add Inventory Item</h2>
           <button onClick={onClose} className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
@@ -147,7 +147,7 @@ function AddInventoryModal({ onClose }: { onClose: () => void }) {
 
         <InventoryForm form={form} setForm={setForm} error={error} />
 
-        <div className="flex gap-3 mt-6">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button onClick={onClose} className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
             Cancel
           </button>
@@ -199,7 +199,7 @@ function EditInventoryModal({ item, onClose, onUpdate }: { item: InventoryItem; 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Edit Item</h2>
           <button onClick={onClose} className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
@@ -213,7 +213,7 @@ function EditInventoryModal({ item, onClose, onUpdate }: { item: InventoryItem; 
 
         <InventoryForm form={form} setForm={setForm} error={error} />
 
-        <div className="flex gap-3 mt-6">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button onClick={onClose} className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
             Cancel
           </button>
@@ -302,31 +302,31 @@ export function InventoryTable({
 
       <div className="space-y-4">
         {/* Summary cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {[
             { label: "Total Items", value: items.length, color: "text-zinc-900 dark:text-zinc-100" },
             { label: "Active", value: activeCount, color: "text-yellow-600 dark:text-yellow-400" },
             { label: "Low Stock", value: lowStockCount, color: "text-red-600 dark:text-red-400" },
             { label: "On Order", value: items.filter(i => i.status === "on_order").length, color: "text-blue-600 dark:text-blue-400" },
           ].map(card => (
-            <div key={card.label} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-sm">
+            <div key={card.label} className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-4">
               <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">{card.label}</p>
-              <p className={`text-3xl font-bold mt-1 ${card.color}`}>{card.value}</p>
+              <p className={`mt-1 text-2xl font-bold sm:text-3xl ${card.color}`}>{card.value}</p>
             </div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
             <input type="text" placeholder="Search items or vendors..."
               value={search} onChange={(e) => setSearch(e.target.value)}
               className="h-10 w-full rounded-md border border-zinc-200 bg-white pl-9 pr-4 text-sm outline-none focus:border-yellow-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100" />
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-              className="admin-select h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+              className="admin-select h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 sm:w-auto">
               <option value="all">All Statuses</option>
               {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
@@ -334,8 +334,8 @@ export function InventoryTable({
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm text-left">
               <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
                 <tr>
@@ -419,6 +419,80 @@ export function InventoryTable({
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-800 md:hidden">
+            {filtered.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-zinc-500">
+                <PackageSearch className="mx-auto mb-2 h-8 w-8 opacity-20" />
+                No inventory items found.
+              </div>
+            ) : (
+              filtered.map((item) => {
+                const isLow = item.quantity <= item.minStockAlert;
+                return (
+                  <div key={item.id} className="space-y-4 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          {isLow && <AlertTriangle className="h-4 w-4 flex-shrink-0 text-red-500" />}
+                          <p className="truncate font-medium text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                        </div>
+                        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                          {item.vendorName || "No vendor"}
+                        </p>
+                      </div>
+                      <span className={cn(
+                        "inline-flex flex-shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        item.status === "active" && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+                        item.status === "on_order" && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+                        item.status === "discontinued" && "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      )}>
+                        {STATUSES.find(s => s.value === item.status)?.label}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Quantity</p>
+                        <p className={cn(
+                          "mt-1 text-lg font-bold",
+                          isLow ? "text-red-500" : "text-yellow-600 dark:text-yellow-400"
+                        )}>
+                          {item.quantity} <span className="text-xs font-normal text-zinc-400">{item.unit}</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Min Alert</p>
+                        <p className="mt-1 text-zinc-900 dark:text-zinc-100">{item.minStockAlert} {item.unit}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Last Restocked</p>
+                        <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+                          {item.lastRestocked ? format(new Date(item.lastRestocked), "MMM d, yyyy") : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Added On</p>
+                        <p className="mt-1 text-zinc-700 dark:text-zinc-300">{format(new Date(item.createdAt), "MMM d, yyyy")}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setEditingItem(item)}
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900">
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
+                      <button onClick={() => setDeletingId(item.id)}
+                        className="inline-flex items-center justify-center rounded-md border border-zinc-200 px-3 py-2 text-red-500 transition-colors hover:bg-red-50 dark:border-zinc-800 dark:hover:bg-red-900/20">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

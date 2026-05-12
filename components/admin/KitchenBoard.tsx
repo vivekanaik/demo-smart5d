@@ -1,30 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Order } from "@/components/admin/OrdersTable";
 import { markItemServed } from "@/actions/kitchen";
 import { Clock, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function KitchenBoard({ initialTickets }: { initialTickets: Order[] }) {
-  const [tickets, setTickets] = useState<Order[]>(initialTickets);
+  const [servedItemIds, setServedItemIds] = useState<Set<number>>(new Set());
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Note: Real app would use websockets or SWR for polling. 
-  // We'll rely on router.refresh() from the parent or manual refresh for now.
-  useEffect(() => {
-    setTickets(initialTickets);
-  }, [initialTickets]);
+  const tickets = useMemo(() => {
+    return initialTickets.map(order => ({
+      ...order,
+      items: order.items.map(item =>
+        servedItemIds.has(item.id) ? { ...item, status: "served" as const } : item
+      ),
+    }));
+  }, [initialTickets, servedItemIds]);
 
   const handleMarkServed = async (itemId: number) => {
     setIsUpdating(true);
     const res = await markItemServed(itemId);
     if (res.success) {
-      // Optimistic update
-      setTickets(prev => prev.map(order => ({
-        ...order,
-        items: order.items.map(i => i.id === itemId ? { ...i, status: "served" } : i)
-      })));
+      setServedItemIds(prev => new Set(prev).add(itemId));
     }
     setIsUpdating(false);
   };
@@ -36,7 +35,7 @@ export function KitchenBoard({ initialTickets }: { initialTickets: Order[] }) {
 
   if (tickets.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-zinc-500 space-y-4 bg-zinc-50 dark:bg-zinc-900/20 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
+      <div className="flex min-h-80 flex-col items-center justify-center space-y-4 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/20 md:h-96">
         <CheckCircle className="h-12 w-12 text-yellow-500/50" />
         <p className="text-lg font-medium">All caught up! No pending orders.</p>
       </div>
@@ -44,7 +43,7 @@ export function KitchenBoard({ initialTickets }: { initialTickets: Order[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+    <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-6">
       {tickets.map(ticket => {
         const waitTime = getWaitTime(ticket.createdAt);
         const isUrgent = waitTime >= 15; // Urgent if older than 15 mins
@@ -64,7 +63,7 @@ export function KitchenBoard({ initialTickets }: { initialTickets: Order[] }) {
           >
             {/* Ticket Header */}
             <div className={cn(
-              "p-4 border-b flex justify-between items-start",
+              "flex items-start justify-between gap-3 border-b p-4",
               isUrgent ? "border-red-200 dark:border-red-900/50 bg-red-100/50 dark:bg-red-900/30" : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
             )}>
               <div>
@@ -85,9 +84,9 @@ export function KitchenBoard({ initialTickets }: { initialTickets: Order[] }) {
               <div className="space-y-3">
                 {pendingItems.map(item => (
                   <div key={item.id} className="flex justify-between items-center group">
-                    <div className="flex gap-3 items-start">
+                  <div className="flex min-w-0 items-start gap-3">
                       <span className="font-bold text-lg text-zinc-900 dark:text-zinc-100">{item.quantity}x</span>
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium text-zinc-800 dark:text-zinc-200 text-lg leading-tight">{item.name}</p>
                         {item.note && <p className="text-sm text-red-500 italic mt-0.5">Note: {item.note}</p>}
                       </div>

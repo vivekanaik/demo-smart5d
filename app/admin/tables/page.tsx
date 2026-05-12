@@ -12,11 +12,11 @@ export default async function AdminTablesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Tables & Reservations</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-3xl">Tables & Reservations</h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">Live floor plan and upcoming bookings.</p>
         </div>
         
-        <button className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors">
+        <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-700 sm:w-auto">
           <Plus className="h-4 w-4" />
           New Booking
         </button>
@@ -30,12 +30,12 @@ export default async function AdminTablesPage() {
             <Armchair className="h-5 w-5 text-yellow-500" />
             Floor Plan
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 sm:gap-4">
             {tables?.map((table) => (
               <div 
                 key={table.id}
                 className={cn(
-                  "p-4 rounded-xl border flex flex-col items-center justify-center text-center space-y-2 transition-all",
+                  "flex min-h-32 flex-col items-center justify-center space-y-2 rounded-xl border p-3 text-center transition-all sm:p-4",
                   table.status === "available" && "bg-white border-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 hover:border-yellow-500",
                   table.status === "occupied" && "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50",
                   table.status === "reserved" && "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/50",
