@@ -34,6 +34,29 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
     return () => { document.body.style.overflow = ""; };
   }, []);
 
+  // Browser Back Button Support
+  useEffect(() => {
+    // Push a dummy state when modal opens
+    window.history.pushState({ ...window.history.state, modal: 'dishviewer' }, '');
+
+    const handlePopState = (e: PopStateEvent) => {
+      // If we go back and the state no longer has our modal flag, close it
+      if (!e.state?.modal) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // If closing via the 'X' button, pop the dummy state to keep history clean
+      if (window.history.state?.modal === 'dishviewer') {
+        window.history.go(-1);
+      }
+    };
+  }, [onClose]);
+
   // Load model-viewer script once
   useEffect(() => {
     import("@google/model-viewer")
@@ -95,7 +118,10 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
 
       {/* ── Close button ── */}
       <button
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
         className="absolute top-4 right-4 z-50 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors"
         aria-label="Close"
       >
@@ -136,7 +162,7 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
             ar: true,
             "ar-modes": "webxr scene-viewer quick-look",
             "ar-placement": "floor",
-            "ar-scale": "fixed",
+            "ar-scale": "auto",
             "camera-orbit": "0deg 75deg auto",
             reveal: "auto",
             onLoad: () => setModelLoaded(true),
@@ -149,7 +175,9 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
               "--progress-bar-height": "0px",
               "--progress-bar-color": "transparent",
             },
-          })
+          }, 
+            React.createElement("div", { slot: "ar-button", style: { display: "none" } })
+          )
         )}
       </div>
 
