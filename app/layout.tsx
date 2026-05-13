@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
-import { Rum_Raisin } from 'next/font/google';
+import { Rum_Raisin, Anton } from 'next/font/google';
 import './globals.css';
 
 const rumRaisin = Rum_Raisin({
   subsets: ['latin'],
   weight: '400',
   variable: '--font-rum-raisin',
+});
+
+const anton = Anton({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-anton',
 });
 
 export const metadata: Metadata = {
@@ -36,7 +42,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning className={`antialiased min-h-screen text-black dark:text-white bg-satin transition-colors duration-500 font-sans ${rumRaisin.variable}`}>
+      <body suppressHydrationWarning className={`antialiased min-h-screen text-black dark:text-white bg-satin transition-colors duration-500 font-sans ${rumRaisin.variable} ${anton.variable}`}>
         {children}
       </body>
     </html>

@@ -4,10 +4,10 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
-import ModelViewer from "@/components/ModelViewer";
+import DishViewer from "@/components/DishViewer";
 import { 
   Star, Utensils, ChefHat, Cake, Leaf, Croissant, Coffee, 
-  LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X, CheckCircle2, Mic 
+  LayoutGrid, Search, List as ListIcon, Plus, Minus, User, X, CheckCircle2, Mic, Box
 } from "lucide-react";
 
 function levenshtein(a: string, b: string): number {
@@ -408,12 +408,14 @@ const MenuItem = React.memo(function MenuItem({
   item,
   layout = 'list',
   quantity,
-  updateQuantity
+  updateQuantity,
+  onView3D,
 }: {
   item: any,
   layout?: 'list' | 'grid',
   quantity: number,
-  updateQuantity: (id: number, delta: number) => void
+  updateQuantity: (id: number, delta: number) => void,
+  onView3D: (item: any) => void,
 }) {
   const isGrid = layout === 'grid';
   const [isExpanded, setIsExpanded] = useState(false);
@@ -421,30 +423,36 @@ const MenuItem = React.memo(function MenuItem({
   return (
     <article className={`flex ${isGrid ? 'flex-col min-h-[140px]' : 'flex-row min-h-[8rem] md:min-h-[10rem] h-auto'} bg-glass rounded-sm overflow-hidden group transition-all duration-500 shadow-sm items-stretch`}>
       
+      {/* ── Image (no model-viewer here → fast) ── */}
       <div className={`shrink-0 ${isGrid ? 'w-full h-48' : 'w-2/5 md:w-1/4 self-stretch min-h-[8rem] md:min-h-[10rem]'} bg-white/50 dark:bg-black/50 flex items-center justify-center relative overflow-hidden`}>
-        <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"></div>
-        <ModelViewer 
-            id={`viewer-${item.id}`} 
-            src={resolveModelUrl(item.modelUrl)} 
-            alt={item.name} 
-            poster={item.posterUrl} 
-            ingredients={item.ingredients} 
-            nutrition={item.nutrition} 
-        />
-        
-        <div className="absolute top-2 left-2 pointer-events-none z-10 text-[8px] uppercase tracking-tighter text-black/50 dark:text-white/30 border border-black/10 dark:border-white/10 p-1 bg-white/20 dark:bg-black/20 backdrop-blur-xs flex items-center gap-1.5 md:p-2">
-           5D View
+        {item.posterUrl ? (
+          <img
+            src={item.posterUrl}
+            alt={item.name}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-contain p-4"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[9px] uppercase tracking-widest text-black/30 dark:text-white/30">{item.name}</span>
+          </div>
+        )}
+
+        {/* Veg/Non-veg dot */}
+        <div className="absolute top-2 right-2 z-10 bg-white/60 dark:bg-black/60 backdrop-blur border border-black/10 dark:border-white/10 p-1 md:p-1.5 rounded-sm flex items-center justify-center">
+          <div className={`w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full ${item.diet === 'Non-Veg' ? 'bg-red-600' : 'bg-green-600'}`}></div>
         </div>
 
-        <div className="absolute top-2 right-2 pointer-events-none z-10 bg-white/60 dark:bg-black/60 backdrop-blur border border-black/10 dark:border-white/10 p-1 md:p-1.5 rounded-sm flex items-center justify-center">
-            <div className={`w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full ${item.diet === 'Non-Veg' ? 'bg-red-600' : 'bg-green-600'}`}></div>
-        </div>
-        
-        <div className="absolute bottom-2 left-2 flex space-x-1 opacity-20 pointer-events-none z-10">
-          <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-black dark:bg-white rounded-full"></div>
-          <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-black dark:bg-white rounded-full"></div>
-          <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-black dark:bg-white rounded-full"></div>
-        </div>
+        {item.modelUrl && (
+          <button
+            onClick={() => onView3D(item)}
+            className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-black/60 dark:bg-black/70 border border-white/20 text-white/80 text-[9px] uppercase tracking-widest font-bold backdrop-blur-md hover:bg-black/80 hover:text-white transition-all duration-300 whitespace-nowrap shadow-md"
+          >
+            <Box className="w-3 h-3" />
+            <span className="hidden sm:inline">View in </span>3D
+          </button>
+        )}
       </div>
 
       <div className={`flex flex-col justify-between ${isGrid ? 'p-5 items-center text-center w-full' : 'p-3 md:p-6 md:flex-row w-3/5 md:w-3/4'}`}>
@@ -602,6 +610,17 @@ export default function SmartMenuPage() {
   };
 
   const [fallbackItem, setFallbackItem] = useState<any>(null);
+
+  // Pre-warm the heavy model-viewer library in the background
+  // so it opens instantly when requested.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import("@google/model-viewer").catch(() => {});
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const [viewer3DItem, setViewer3DItem] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [language, setLanguage] = useState<string>('en');
   
@@ -894,6 +913,17 @@ export default function SmartMenuPage() {
   return (
     <ThemeProvider>
       <div className="flex flex-col min-h-screen relative">
+        {/* DishViewer full-screen 3D modal */}
+        {viewer3DItem && (
+          <DishViewer
+            item={viewer3DItem}
+            resolveModelUrl={resolveModelUrl}
+            onClose={() => setViewer3DItem(null)}
+            quantity={cart[viewer3DItem.id] || 0}
+            updateQuantity={updateQuantity}
+          />
+        )}
+
         <Header cartCount={cartCount} onCartClick={openOrderModal} language={language} setLanguage={setLanguage} />
         
         <section className="w-full bg-white/30 dark:bg-black/30 backdrop-blur-md border-b border-black/5 dark:border-white/5 sticky top-16 z-40">
@@ -1022,6 +1052,7 @@ export default function SmartMenuPage() {
                 layout={viewLayout}
                 quantity={cart[item.id] || 0}
                 updateQuantity={updateQuantity}
+                onView3D={setViewer3DItem}
               />
             ))
           ) : (
@@ -1426,34 +1457,13 @@ export default function SmartMenuPage() {
       )}
 
       {fallbackItem && (
-        <div className="fixed inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center backdrop-blur-xl">
-          <button 
-             onClick={() => setFallbackItem(null)}
-             className="absolute top-6 left-6 z-[110] px-4 py-2 bg-white/5 backdrop-blur-md rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white border border-white/10 hover:bg-white/10 transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-          >
-             <span className="text-lg leading-none">&larr;</span> Back to Menu
-          </button>
-          
-          <div className="absolute bottom-10 z-[110] pointer-events-none w-full text-center px-4">
-             <p className="font-serif italic text-xl tracking-wide text-white">
-                 {fallbackItem.name}
-             </p>
-             <p className="text-[10px] tracking-widest text-white/40 mt-1 uppercase">
-                 5D Interactive View
-             </p>
-          </div>
-
-          <div className="w-full h-full max-h-screen">
-            <ModelViewer 
-               id={`fallback-viewer-${fallbackItem.id}`} 
-               src={resolveModelUrl(fallbackItem.modelUrl)} 
-               alt={fallbackItem.name} 
-               ingredients={fallbackItem.ingredients}
-               nutrition={fallbackItem.nutrition}
-               showInteractiveUI={true}
-            />
-          </div>
-        </div>
+        <DishViewer
+          item={fallbackItem}
+          resolveModelUrl={resolveModelUrl}
+          onClose={() => setFallbackItem(null)}
+          quantity={cart[fallbackItem.id] || 0}
+          updateQuantity={updateQuantity}
+        />
       )}
     </ThemeProvider>
   );
