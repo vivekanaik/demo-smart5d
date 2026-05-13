@@ -111,6 +111,17 @@ export const reservations = pgTable("reservations", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const tablesRelations = relations(tables, ({ many }) => ({
+    reservations: many(reservations),
+}));
+
+export const reservationsRelations = relations(reservations, ({ one }) => ({
+    table: one(tables, {
+        fields: [reservations.tableId],
+        references: [tables.id],
+    }),
+}));
+
 export const customers = pgTable("customers", {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 100 }).notNull(),
