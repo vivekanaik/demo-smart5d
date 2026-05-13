@@ -28,12 +28,6 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
   const [activePanel, setActivePanel] = useState<Panel>(null);
   const viewerRef = useRef<any>(null);
 
-  // Lock body scroll
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
   // Browser Back Button Support
   useEffect(() => {
     // Push a dummy state when modal opens

@@ -431,7 +431,7 @@ const MenuItem = React.memo(function MenuItem({
             alt={item.name}
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-contain p-4"
+            className="w-full h-full object-contain p-2"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -450,7 +450,7 @@ const MenuItem = React.memo(function MenuItem({
             className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-black/60 dark:bg-black/70 border border-white/20 text-white/80 text-[9px] uppercase tracking-widest font-bold backdrop-blur-md hover:bg-black/80 hover:text-white transition-all duration-300 whitespace-nowrap shadow-md"
           >
             <Box className="w-3 h-3" />
-            <span className="hidden sm:inline">View in </span>3D
+            <span className="hidden sm:inline">View in </span>5D
           </button>
         )}
       </div>
@@ -645,7 +645,7 @@ export default function SmartMenuPage() {
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
-    if (isOrderModalOpen || isWaiterModalOpen || itemToDelete !== null) {
+    if (isOrderModalOpen || isWaiterModalOpen || itemToDelete !== null || viewer3DItem !== null) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -653,7 +653,7 @@ export default function SmartMenuPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOrderModalOpen, isWaiterModalOpen, itemToDelete]);
+  }, [isOrderModalOpen, isWaiterModalOpen, itemToDelete, viewer3DItem]);
   
   const cartCount = useMemo(() => Object.values(cart).reduce((sum, qty) => sum + qty, 0), [cart]);
   
