@@ -59,7 +59,7 @@ interface WaiterRequest {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<"menu" | "billing" | "security" | "language">("menu");
+  const [activeTab, setActiveTab] = useState<"menu" | "security" | "language">("menu");
   const [chefLanguage, setChefLanguage] = useState<string>("en");
   const [showLangModal, setShowLangModal] = useState<boolean>(false);
 
@@ -89,9 +89,6 @@ export default function SettingsPage() {
     nutrition: { calories: "", protein: "", carbs: "", fat: "" }, modelUrl: "", photoUrl: "" 
   });
   const [newPassword, setNewPassword] = useState("");
-  const [gstRate, setGstRate] = useState<number>(5);
-  const [upiId, setUpiId] = useState("");
-  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
 
   // --- NOTIFICATION STATE ---
   const [waiterRequests, setWaiterRequests] = useState<WaiterRequest[]>([]);
@@ -100,11 +97,7 @@ export default function SettingsPage() {
 
   // Initialize settings
   React.useEffect(() => {
-    if (settings) {
-      setGstRate(settings.gstRate);
-      if (settings.upiId) setUpiId(settings.upiId);
-      if (settings.qrCodeUrl) setQrCodeBase64(settings.qrCodeUrl);
-    }
+    // Currently no chef-specific settings to init that aren't menu/password
   }, [settings]);
 
   // --- NOTIFICATION LOGIC ---
@@ -196,28 +189,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleBillingUpdate = async () => {
-    await updateGstRate(gstRate);
-    await updateBillingSettings(upiId, qrCodeBase64);
-    mutateSettings();
-    alert("Billing Settings updated successfully!");
-  };
 
-  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1048576) { // 1 MB limit
-        alert("Image is too large! Please upload an image smaller than 1MB.");
-        e.target.value = ""; // Clear the input
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setQrCodeBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,9 +243,6 @@ export default function SettingsPage() {
           <div className="flex border-b border-black/10 dark:border-white/10 gap-6 overflow-x-auto scrollbar-hide">
             <button onClick={() => setActiveTab("menu")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "menu" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
               <Utensils size={16} /> Menu
-            </button>
-            <button onClick={() => setActiveTab("billing")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "billing" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
-              <ReceiptText size={16} /> Billing
             </button>
             <button onClick={() => setActiveTab("security")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "security" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
               <ShieldAlert size={16} /> Security
@@ -349,64 +318,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* BILLING TAB */}
-          {activeTab === "billing" && (
-            <div className="max-w-md bg-glass border border-black/10 dark:border-white/10 p-6 rounded-xl space-y-6">
-              <div>
-                <h3 className="font-serif italic text-lg text-black dark:text-white">Tax & GST Settings</h3>
-                <p className="text-xs text-black/50 dark:text-white/50 mt-1">This rate will automatically apply to all incoming orders on the frontend menu and chef console.</p>
-              </div>
-              
-              <div className="space-y-3">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-black/60 dark:text-white/60">Current GST Rate (%)</label>
-                <div className="grid grid-cols-3 gap-3">
-                   {[0, 5, 18].map((rate) => (
-                     <button
-                       key={rate}
-                       onClick={() => setGstRate(rate)}
-                       className={`py-3 rounded-lg border font-bold text-sm transition-colors ${gstRate === rate ? 'bg-gold border-gold text-white shadow-md' : 'bg-transparent border-black/10 dark:border-white/10 text-black/60 dark:text-white/60 hover:border-gold'}`}
-                     >
-                       {rate}%
-                     </button>
-                   ))}
-                </div>
-              </div>
 
-              <div className="space-y-3 pt-4 border-t border-black/10 dark:border-white/10">
-                <h4 className="text-sm font-bold text-black dark:text-white">Payment Details</h4>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-widest font-bold text-black/60 dark:text-white/60">UPI ID</label>
-                  <input 
-                    type="text" 
-                    value={upiId} 
-                    onChange={(e) => setUpiId(e.target.value)} 
-                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-2.5 px-3 rounded-lg text-sm focus:outline-none focus:border-gold text-black dark:text-white transition-all"
-                    placeholder="e.g. yourname@upi"
-                  />
-                </div>
-                <div className="space-y-2 pt-2">
-                  <label className="text-[10px] uppercase tracking-widest font-bold text-black/60 dark:text-white/60">Payment QR Code</label>
-                  <div className="flex flex-col gap-3">
-                    {qrCodeBase64 && (
-                      <div className="w-24 h-24 border border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-white">
-                        <img src={qrCodeBase64} alt="QR Code" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={handleQrUpload}
-                      className="text-xs text-black/60 dark:text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-gold/10 file:text-gold hover:file:bg-gold/20"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <button onClick={handleBillingUpdate} className="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 hover:opacity-80 transition shadow-md">
-                <Save size={16} /> Save Billing Settings
-              </button>
-            </div>
-          )}
 
           {/* LANGUAGE TAB */}
           {activeTab === "language" && (

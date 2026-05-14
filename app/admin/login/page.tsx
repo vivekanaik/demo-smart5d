@@ -1,79 +1,124 @@
-import { ChefHat } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { adminLogin } from "@/actions/adminAuth";
+import { Eye, EyeOff, Lock, Loader2 } from "lucide-react";
 
 export default function AdminLoginPage() {
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await adminLogin(password);
+      if (result.success && result.role) {
+        // Redirect based on role
+        if (result.role === "waiter") {
+          router.push("/admin/pos");
+        } else {
+          router.push("/admin");
+        }
+        router.refresh();
+      } else {
+        setError(result.message || "Incorrect password. Please try again.");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black font-sans px-4">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
-        <div className="text-center">
-          <div className="mx-auto flex h-16 items-center justify-center">
-            <img src="/esvalo.png" alt="Esvalo Logo" className="h-12 w-auto object-contain" />
+    <div className="flex min-h-screen items-center justify-center bg-zinc-950 font-sans px-4">
+      {/* Background grain */}
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")"}}/>
+
+      <div className="w-full max-w-sm relative z-10">
+        {/* Logo */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-zinc-900 border border-zinc-800 mb-6 shadow-2xl">
+            <img src="/esvalo.png" alt="Esvalo Logo" className="h-10 w-auto object-contain" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Welcome Back
-          </h2>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Sign in to access the Smart5D POS dashboard
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Welcome Back</h1>
+          <p className="mt-2 text-sm text-zinc-500">Enter your password to access the dashboard</p>
         </div>
 
-        <form className="mt-8 space-y-6">
-          <div className="space-y-4 rounded-md shadow-sm">
+        {/* Role hint pills */}
+        <div className="flex gap-2 justify-center mb-8">
+          {[
+            { label: "Owner", color: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" },
+            { label: "Manager", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+            { label: "Waiter", color: "bg-green-500/10 text-green-400 border-green-500/20" },
+          ].map((r) => (
+            <span key={r.label} className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${r.color}`}>
+              {r.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Form card */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Role
+              <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
+                Password
               </label>
-              <select className="admin-select mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 bg-white text-zinc-900 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-              >
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="cashier">Cashier</option>
-                <option value="chef">Chef</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="pin" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Access PIN / Password
-              </label>
-              <input
-                id="pin"
-                name="pin"
-                type="password"
-                required
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 bg-white text-zinc-900 placeholder-zinc-400 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                placeholder="Enter your credentials"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 rounded border-zinc-300 text-yellow-600 focus:ring-yellow-500 dark:border-zinc-700 dark:bg-zinc-900"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-zinc-900 dark:text-zinc-300">
-                Remember me
-              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoFocus
+                  placeholder="Enter your password"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="text-sm">
-              <a href="#" className="font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400">
-                Forgot password?
-              </a>
-            </div>
-          </div>
+            {error && (
+              <div className="bg-red-900/20 border border-red-800/50 rounded-lg px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
 
-          <div>
             <button
-              type="button"
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-yellow-600 py-2.5 px-4 text-sm font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:hover:bg-yellow-500"
+              type="submit"
+              disabled={loading || !password}
+              className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold py-3 rounded-xl text-sm tracking-wide transition-all shadow-lg shadow-yellow-500/20"
             >
-              Sign in
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        <p className="text-center text-xs text-zinc-700 mt-6">
+          Esvalo POS • Secure Access
+        </p>
       </div>
     </div>
   );

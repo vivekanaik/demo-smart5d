@@ -23,6 +23,14 @@ export async function markRequestsAsResolved() {
   return { success: true };
 }
 
+export async function markRequestAsResolved(id: number) {
+  await db.update(serviceRequests)
+    .set({ status: 'resolved' })
+    .where(eq(serviceRequests.id, id));
+
+  return { success: true };
+}
+
 export async function createServiceRequest(tableNumber: number) {
   // .returning() ensures this returns the inserted row as a plain object, not the raw connection
   const newRequest = await db.insert(serviceRequests)

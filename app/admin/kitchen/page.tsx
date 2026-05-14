@@ -1,16 +1,16 @@
-import { getActiveKitchenOrders } from "@/actions/kitchen";
-import { KitchenBoard } from "@/components/admin/KitchenBoard";
-import { Order } from "@/components/admin/OrdersTable";
+import { getActiveOrders, getClosedOrders, getCancelledOrders } from "@/actions/orders";
+import { KitchenDashboardClient } from "@/components/admin/kitchen/KitchenDashboardClient";
+import type { ComponentProps } from "react";
 
-// Disable caching for the kitchen board to ensure fresh data on reload
+type KitchenOrders = ComponentProps<typeof KitchenDashboardClient>["initialActiveOrders"];
+
+// Disable caching to ensure fresh data on reload
 export const dynamic = "force-dynamic";
 
 export default async function AdminKitchenPage() {
-  const result = await getActiveKitchenOrders();
-
-  if (!result.success) {
-    return <div className="p-8 text-red-500">Failed to load kitchen tickets.</div>;
-  }
+  const activeOrders = await getActiveOrders() as KitchenOrders;
+  const closedOrders = await getClosedOrders() as KitchenOrders;
+  const cancelledOrders = await getCancelledOrders() as KitchenOrders;
 
   return (
     <div className="space-y-6">
@@ -21,7 +21,11 @@ export default async function AdminKitchenPage() {
         </div>
       </div>
 
-      <KitchenBoard initialTickets={(result.tickets as Order[]) || []} />
+      <KitchenDashboardClient 
+        initialActiveOrders={activeOrders} 
+        initialClosedOrders={closedOrders} 
+        initialCancelledOrders={cancelledOrders} 
+      />
     </div>
   );
 }

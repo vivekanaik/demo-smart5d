@@ -119,3 +119,23 @@ export async function getOrderDetails(orderId: string) {
     return null;
   }
 }
+
+// Get Completed orders
+export async function getClosedOrders() {
+  return await db.query.orders.findMany({
+    where: eq(orders.status, "completed"),
+    with: { items: true },
+    orderBy: [desc(orders.closedAt)],
+    limit: 50, // Limit to recent 50 for performance
+  });
+}
+
+// Get Cancelled orders
+export async function getCancelledOrders() {
+  return await db.query.orders.findMany({
+    where: eq(orders.status, "cancelled"),
+    with: { items: true },
+    orderBy: [desc(orders.closedAt)],
+    limit: 50, // Limit to recent 50 for performance
+  });
+}

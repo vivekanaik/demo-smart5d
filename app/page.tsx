@@ -47,130 +47,7 @@ function resolveModelUrl(modelPath: string) {
   return `${MODELS_BASE_URL.replace(/\/+$/, "")}/${normalizedPath}`;
 }
 
-// ✅ Offset Dummy IDs to 1001+ to avoid clashing with DB items which start at 1
-const MENU_ITEMS = [
-  {
-    id: 1001,
-    name: "Truffle Mushroom Pizza",
-    description: "Wood-fired pizza with creamy truffle sauce, wild mushrooms, mozzarella, and fresh basil.",
-    price: "₹480",
-    category: "Main Course",
-    diet: "Veg",
-    ingredients: ["Pizza Dough", "Mozzarella", "Mushrooms", "Truffle Oil", "Garlic", "Basil"],
-    nutrition: { calories: "420 kcal", protein: "14g", carbs: "48g", fat: "18g" },
-    modelUrl: "mushroompizza-3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/pizza.webp"
-  },
-  {
-    id: 1002,
-    name: "Classic Veggie Burger",
-    description: "Grilled veggie patty with lettuce, tomato, cheese, and house sauce in a toasted bun.",
-    price: "₹220",
-    category: "Chef Special",
-    diet: "Veg",
-    ingredients: ["Burger Bun", "Veg Patty", "Lettuce", "Tomato", "Cheese Slice", "Mayonnaise"],
-    nutrition: { calories: "380 kcal", protein: "10g", carbs: "42g", fat: "16g" },
-    modelUrl: "hamburger3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/burger.webp"
-  },
-  {
-    id: 1003,
-    name: "Spicy Veg Ramen",
-    description: "Rich vegetable broth ramen with noodles, tofu, corn, mushrooms, and chili oil.",
-    price: "₹350",
-    category: "Main Course",
-    diet: "Veg",
-    ingredients: ["Ramen Noodles", "Tofu", "Corn", "Mushrooms", "Vegetable Broth", "Chili Oil"],
-    nutrition: { calories: "460 kcal", protein: "18g", carbs: "58g", fat: "14g" },
-    modelUrl: "pastadish-3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/ramen.webp"
-  },
-  {
-    id: 1004,
-    name: "Pesto Paneer Noodles",
-    description: "Stir-fried noodles tossed in creamy basil pesto with grilled paneer, crunchy vegetables, and herbs.",
-    price: "₹300",
-    category: "Main Course",
-    diet: "Veg",
-    ingredients: ["Noodles", "Paneer", "Basil Pesto Sauce", "Capsicum", "Onion", "Cherry Tomatoes", "Olive Oil", "Garlic", "Chili Flakes"],
-    nutrition: { calories: "480 kcal", protein: "18g", carbs: "58g", fat: "18g" },
-    modelUrl: "pastadish-3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/pasta.webp"
-  },
-  {
-    id: 1005,
-    name: "Bombay Sandwich",
-    description: "Grilled Mumbai-style sandwich layered with spiced potato filling, fresh cucumber, tomato, onion, mint chutney, and cheese, served with fries.",
-    price: "₹180",
-    category: "Starters",
-    diet: "Veg",
-    ingredients: ["Bread", "Boiled Potato", "Cucumber", "Tomato", "Onion", "Capsicum", "Mint Chutney", "Butter", "Cheese", "Chaat Masala"],
-    nutrition: { calories: "350 kcal", protein: "10g", carbs: "45g", fat: "14g" },
-    modelUrl: "sandwich3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/sandwich.webp"
-  },
-  {
-    id: 1006,
-    name: "Mediterranean Feta Salad",
-    description: "Crisp greens, kalamata olives, cucumber, cherry tomatoes, and feta cheese with a light vinaigrette.",
-    price: "₹250",
-    category: "Salads",
-    diet: "Veg",
-    ingredients: ["Mixed Greens", "Feta Cheese", "Olives", "Cucumber", "Cherry Tomatoes", "Vinaigrette"],
-    nutrition: { calories: "210 kcal", protein: "8g", carbs: "12g", fat: "16g" },
-    modelUrl: "vegetablesalad-3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/bowl.webp"
-  },
-  {
-    id: 1007,
-    name: "Artisan Garlic Bread",
-    description: "Freshly baked sourdough bread brushed with roasted garlic and herb butter.",
-    price: "₹150",
-    category: "Breads",
-    diet: "Veg",
-    ingredients: ["Sourdough", "Butter", "Garlic", "Parsley", "Sea Salt"],
-    nutrition: { calories: "320 kcal", protein: "6g", carbs: "45g", fat: "12g" },
-    modelUrl: "garlicbread-3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/bread.webp"
-  },
-  {
-    id: 1008,
-    name: "Obsidian Lava Dessert",
-    description: "Molten dark chocolate cake served over a bed of edible gold crumbs and liquid nitrogen.",
-    price: "₹450",
-    category: "Desserts",
-    diet: "Veg",
-    ingredients: ["Dark Chocolate", "Flour", "Butter", "Eggs", "Sugar", "Gold Crumbs"],
-    nutrition: { calories: "580 kcal", protein: "8g", carbs: "52g", fat: "35g" },
-    modelUrl: "chocolatelava-cake-3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/lava-cake.webp"
-  },
-  {
-    id: 1009,
-    name: "Blue Galactic Mojito",
-    description: "A visually striking mix of blue curaçao, mint, lime, and sparkling water.",
-    price: "₹190",
-    category: "Drinks",
-    diet: "Veg",
-    ingredients: ["Blue Curaçao Syrup", "Mint", "Lime", "Sparkling Water", "Ice"],
-    nutrition: { calories: "140 kcal", protein: "0g", carbs: "35g", fat: "0g" },
-    modelUrl: "bluecocktail-3d-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/drink.webp"
-  },
-  {
-    id: 1010,
-    name: "Chicken Tikka Skewers",
-    description: "Tender chicken chunks marinated in spiced yogurt, grilled to perfection.",
-    price: "₹320",
-    category: "Starters",
-    diet: "Non-Veg",
-    ingredients: ["Chicken Breast", "Yogurt", "Tikka Masala", "Lemon Juice", "Garlic", "Ginger"],
-    nutrition: { calories: "280 kcal", protein: "35g", carbs: "8g", fat: "12g" },
-    modelUrl: "grilled-kebab-model-v1.glb",
-    posterUrl: "https://pub-1c494745a7714afbbe5cbdba7ad19931.r2.dev/skewer.webp"
-  }
-];
-
+// ✅ Menu items are now exclusively loaded from the database
 const CATEGORIES = [
   { id: 'All', label: 'All', icon: LayoutGrid },
   { id: 'Chef Special', label: "Chef's Special", icon: Star },
@@ -419,19 +296,30 @@ const MenuItem = React.memo(function MenuItem({
 }) {
   const isGrid = layout === 'grid';
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <article className={`flex ${isGrid ? 'flex-col min-h-[140px]' : 'flex-row min-h-[8rem] md:min-h-[10rem] h-auto'} bg-glass rounded-sm overflow-hidden group transition-all duration-500 shadow-sm items-stretch`}>
       
       {/* ── Image (no model-viewer here → fast) ── */}
       <div className={`shrink-0 ${isGrid ? 'w-full h-48' : 'w-2/5 md:w-1/4 self-stretch min-h-[8rem] md:min-h-[10rem]'} bg-white/50 dark:bg-black/50 flex items-center justify-center relative overflow-hidden`}>
+        {/* Placeholder Logo */}
+        {!imageLoaded && (
+          <img
+            src="/esvalo.webp"
+            alt="Esvalo Placeholder"
+            className="absolute inset-0 w-full h-full object-contain opacity-40 p-8"
+          />
+        )}
+
         {item.posterUrl ? (
           <img
             src={item.posterUrl}
             alt={item.name}
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-contain p-2"
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-full object-contain p-2 transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -446,7 +334,12 @@ const MenuItem = React.memo(function MenuItem({
 
         {item.modelUrl && (
           <button
-            onClick={() => onView3D(item)}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onView3D(item);
+            }}
             className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-black/60 dark:bg-black/70 border border-white/20 text-white/80 text-[9px] uppercase tracking-widest font-bold backdrop-blur-md hover:bg-black/80 hover:text-white transition-all duration-300 whitespace-nowrap shadow-md"
           >
             <Box className="w-3 h-3" />
@@ -589,10 +482,10 @@ function Footer() {
 }
 
 export default function SmartMenuPage() {
-  const { data: dbMenuItems = [] } = useSWR("menuItems", getMenuItems);
+  const { data: dbMenuItems = [], isLoading: isMenuLoading } = useSWR("menuItems", getMenuItems);
   const { data: dbSettings } = useSWR("settings", getSettings);
 
-  const ALL_MENU_ITEMS = useMemo(() => [...MENU_ITEMS, ...dbMenuItems], [dbMenuItems]);
+  const ALL_MENU_ITEMS = dbMenuItems;
   
   const currentGstRate = dbSettings?.gstRate ?? 5;
 
@@ -1044,7 +937,24 @@ export default function SmartMenuPage() {
         </section>
         
         <main className={`flex-1 px-4 sm:px-10 py-6 w-full ${viewLayout === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6' : 'flex flex-col gap-4'}`}>
-          {filteredItems.length > 0 ? (
+          {isMenuLoading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className={`flex ${viewLayout === 'grid' ? 'flex-col min-h-[140px]' : 'flex-row min-h-[8rem] md:min-h-[10rem] h-auto'} bg-glass rounded-sm overflow-hidden animate-pulse`}>
+                <div className={`shrink-0 ${viewLayout === 'grid' ? 'w-full h-48' : 'w-2/5 md:w-1/4 self-stretch min-h-[8rem] md:min-h-[10rem]'} bg-black/10 dark:bg-white/10`} />
+                <div className={`flex flex-col justify-between ${viewLayout === 'grid' ? 'p-5 w-full' : 'p-3 md:p-6 w-3/5 md:w-3/4'}`}>
+                  <div className="space-y-3 w-full">
+                    <div className="h-6 bg-black/10 dark:bg-white/10 rounded-sm w-3/4"></div>
+                    <div className="h-3 bg-black/10 dark:bg-white/10 rounded-sm w-full"></div>
+                    <div className="h-3 bg-black/10 dark:bg-white/10 rounded-sm w-5/6"></div>
+                  </div>
+                  <div className={`flex justify-between items-end mt-4 ${viewLayout === 'grid' ? '' : 'md:w-[100px] ml-auto'}`}>
+                    <div className="h-5 bg-black/10 dark:bg-white/10 rounded-sm w-12"></div>
+                    <div className="h-8 bg-black/10 dark:bg-white/10 rounded-sm w-20"></div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : filteredItems.length > 0 ? (
             filteredItems.map((item) => (
               <MenuItem
                 key={item.id}

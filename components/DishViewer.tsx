@@ -28,28 +28,7 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
   const [activePanel, setActivePanel] = useState<Panel>(null);
   const viewerRef = useRef<any>(null);
 
-  // Browser Back Button Support
-  useEffect(() => {
-    // Push a dummy state when modal opens
-    window.history.pushState({ ...window.history.state, modal: 'dishviewer' }, '');
-
-    const handlePopState = (e: PopStateEvent) => {
-      // If we go back and the state no longer has our modal flag, close it
-      if (!e.state?.modal) {
-        onClose();
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      // If closing via the 'X' button, pop the dummy state to keep history clean
-      if (window.history.state?.modal === 'dishviewer') {
-        window.history.go(-1);
-      }
-    };
-  }, [onClose]);
+  // Manual history management removed to prevent Next.js router conflicts
 
   // Load model-viewer script once
   useEffect(() => {
