@@ -5,7 +5,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
-  ShoppingCart, 
+  ShoppingCart,
+  ShoppingBag,
   Receipt, 
   Users, 
   ChefHat, 
@@ -17,21 +18,25 @@ import {
   LogOut,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { getActiveOrders } from "@/actions/orders";
 import { adminLogout, type AdminRole } from "@/actions/adminAuth";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import { getDynamicNotifications } from "@/actions/notifications";
 
 // Routes hidden for each restricted role
 const MANAGER_HIDDEN = ["/admin/employees", "/admin/leaves", "/admin/customers"];
-const WAITER_ALLOWED = ["/admin/pos", "/admin/tables"];
+const WAITER_ALLOWED = ["/admin/billing", "/admin/tables", "/admin", "/admin/kitchen", "/admin/notifications"];
 
 const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
-  { name: "POS Billing", href: "/admin/pos", icon: Receipt },
+  { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
+  { name: "Billing", href: "/admin/billing", icon: Receipt },
   { name: "Employees", href: "/admin/employees", icon: Users },
   { name: "Kitchen", href: "/admin/kitchen", icon: ChefHat },
   { name: "Leaves & Holidays", href: "/admin/leaves", icon: CalendarDays },
@@ -45,20 +50,117 @@ const navItems = [
 type SidebarProps = {
   open?: boolean;
   onClose?: () => void;
+  role?: "owner" | "manager" | "waiter";
 };
 
-export function Sidebar({ open = false, onClose }: SidebarProps) {
+export function Sidebar({ open = false, onClose, role }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [role, setRole] = useState<AdminRole | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
+
+  // Fetch notifications to show red dot on Sidebar
+  const { data: allNotifications = [] } = useSWR("admin-dynamic-notifications", getDynamicNotifications, {
+    refreshInterval: 5000,
+  });
+
+  const { data: activeOrders = [] } = useSWR("adminActiveOrders", getActiveOrders, {
+    refreshInterval: 5000,
+  });
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const previousOrderIdsRef = useRef<Set<string>>(new Set());
+  const previousNotificationIdsRef = useRef<Set<string>>(new Set());
+  const isInitialLoad = useRef(true);
+
+  const [hasSeenKitchen, setHasSeenKitchen] = useState(false);
+  const [hasSeenNotifications, setHasSeenNotifications] = useState(false);
+
+  useEffect(() => {
+    if (pathname === "/admin/kitchen") setHasSeenKitchen(true);
+    if (pathname === "/admin/notifications") setHasSeenNotifications(true);
+  }, [pathname]);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/ring.mp3");
+    const unlockAudio = () => {
+      if (audioRef.current) {
+        audioRef.current.play().then(() => {
+          audioRef.current!.pause();
+          audioRef.current!.currentTime = 0;
+        }).catch(() => {});
+      }
+      window.removeEventListener('click', unlockAudio);
+    };
+    window.addEventListener('click', unlockAudio);
+    return () => window.removeEventListener('click', unlockAudio);
+  }, []);
+
+  useEffect(() => {
+    const currentIds = new Set(activeOrders.map(o => o.id));
+    const newIds = [...currentIds].filter(id => !previousOrderIdsRef.current.has(id));
+
+    if (newIds.length > 0 && !isInitialLoad.current) {
+      const isMuted = localStorage.getItem("notification_sound_muted") === "true";
+      if (!isMuted && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
+      if (pathname !== "/admin/kitchen") {
+        setHasSeenKitchen(false);
+      }
+    }
+
+    previousOrderIdsRef.current = currentIds;
+    if (activeOrders.length > 0 || isInitialLoad.current) {
+      isInitialLoad.current = false;
+    }
+  }, [activeOrders, pathname]);
+
+  const [prefs, setPrefs] = useState({
+    service: true,
+    inventory: true,
+    booking: true,
+    payment: true,
+    leave: true,
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem("notification_prefs");
+    if (saved) {
+      try {
+        setPrefs(prev => ({ ...prev, ...JSON.parse(saved) }));
+      } catch (e) {}
+    }
+  }, []);
+
+  const filteredNotifications = allNotifications.filter(n => {
+    if (role === "waiter" && n.type === "inventory") return false;
+    if (role === "waiter" && n.type === "leave") return false;
+    if (n.type === "service" && !prefs.service) return false;
+    if (n.type === "inventory" && !prefs.inventory) return false;
+    if (n.type === "booking" && !prefs.booking) return false;
+    if (n.type === "payment" && !prefs.payment) return false;
+    if (n.type === "leave" && !prefs.leave) return false;
+    return true;
+  });
+
+  useEffect(() => {
+    const currentIds = new Set(filteredNotifications.map(n => n.id));
+    const newIds = [...currentIds].filter(id => !previousNotificationIdsRef.current.has(id));
+
+    if (newIds.length > 0 && !isInitialLoad.current) {
+      if (pathname !== "/admin/notifications") {
+        setHasSeenNotifications(false);
+      }
+    }
+    
+    previousNotificationIdsRef.current = currentIds;
+  }, [filteredNotifications, pathname]);
 
   useEffect(() => {
     const saved = localStorage.getItem("adminSidebarCollapsed");
     if (saved === "true") setIsCollapsed(true);
-    // Read role from cookie in browser
-    const match = document.cookie.match(/admin_auth=([^;]+)/);
-    if (match) setRole(match[1] as AdminRole);
   }, []);
 
   const toggleCollapse = () => {
@@ -68,18 +170,25 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     await adminLogout();
     router.push("/admin/login");
     router.refresh();
   };
 
-  // Filter nav items based on role
-  const visibleNavItems = navItems.filter((item) => {
-    if (!role || role === "owner") return true;
-    if (role === "manager") return !MANAGER_HIDDEN.includes(item.href);
-    if (role === "waiter") return WAITER_ALLOWED.includes(item.href);
-    return false;
-  });
+  // Determine visibility and blur for each item
+  const getNavStatus = (href: string) => {
+    if (!role || role === "owner") return { visible: true, allowed: true };
+    if (role === "manager") {
+      const isHidden = MANAGER_HIDDEN.includes(href);
+      return { visible: true, allowed: !isHidden };
+    }
+    if (role === "waiter") {
+      const isAllowed = WAITER_ALLOWED.includes(href);
+      return { visible: true, allowed: isAllowed };
+    }
+    return { visible: false, allowed: false };
+  };
 
   // Role badge config
   const roleBadge = role === "owner"
@@ -87,6 +196,8 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     : role === "manager"
     ? { label: "Manager", cls: "text-blue-400 bg-blue-500/10 border-blue-500/20" }
     : { label: "Waiter", cls: "text-green-400 bg-green-500/10 border-green-500/20" };
+
+
 
   return (
     <>
@@ -134,26 +245,48 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             </div>
           )}
           <nav className="space-y-1 px-3">
-            {visibleNavItems.map((item) => {
+            {navItems.map((item) => {
+              const { visible, allowed } = getNavStatus(item.href);
+              if (!visible) return null;
+
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const actuallyActive = item.href === "/admin" ? pathname === "/admin" : isActive;
 
               return (
                 <Link
                   key={item.name}
-                  href={item.href}
-                  onClick={onClose}
+                  href={allowed ? item.href : "#"}
+                  onClick={(e) => {
+                    if (!allowed) {
+                      e.preventDefault();
+                      return;
+                    }
+                    if (onClose) onClose();
+                  }}
                   className={cn(
-                    "flex items-center rounded-md text-sm font-medium transition-colors md:py-2.5",
+                    "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+                    isCollapsed ? "justify-center" : "",
+                    !allowed && "opacity-40 grayscale cursor-not-allowed",
                     actuallyActive
-                      ? "bg-yellow-50 text-yellow-700 dark:bg-zinc-800/80 dark:text-yellow-400"
-                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
-                    isCollapsed ? "justify-center px-0 py-3" : "gap-3 px-3 py-3"
+                      ? "bg-yellow-50 text-yellow-700 shadow-sm dark:bg-yellow-500/10 dark:text-yellow-500"
+                      : allowed 
+                        ? "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                        : "text-zinc-600 dark:text-zinc-400"
                   )}
                   title={isCollapsed ? item.name : undefined}
                 >
-                  <item.icon className={cn("flex-shrink-0", isCollapsed ? "h-6 w-6" : "h-5 w-5", actuallyActive ? "text-yellow-500" : "text-zinc-500")} />
-                  {!isCollapsed && <span className="truncate">{item.name}</span>}
+                  <div className="relative flex items-center justify-center">
+                    <item.icon className={cn("h-5 w-5 flex-shrink-0", actuallyActive ? "text-yellow-600 dark:text-yellow-500" : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-400")} />
+                    {item.name === "Notifications" && filteredNotifications.length > 0 && !hasSeenNotifications && (
+                      <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-950"></span>
+                    )}
+                    {item.name === "Kitchen" && activeOrders.length > 0 && !hasSeenKitchen && (
+                      <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-950"></span>
+                    )}
+                  </div>
+                  {!isCollapsed && (
+                    <span className="flex-1 truncate">{item.name}</span>
+                  )}
                 </Link>
               );
             })}
@@ -171,11 +304,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           </button>
           <button
             onClick={handleLogout}
-            className={cn("flex items-center rounded-md text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 dark:text-red-400 md:py-2.5", isCollapsed ? "justify-center py-3 w-full" : "gap-3 px-3 py-3 w-full")}
-            title={isCollapsed ? "Logout" : undefined}
+            disabled={isLoggingOut}
+            className={cn("flex items-center rounded-md text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 dark:text-red-400 md:py-2.5 disabled:opacity-50 disabled:cursor-not-allowed", isCollapsed ? "justify-center py-3 w-full" : "gap-3 px-3 py-3 w-full")}
+            title={isCollapsed ? (isLoggingOut ? "Logging out..." : "Logout") : undefined}
           >
-            <LogOut className="h-5 w-5" />
-            {!isCollapsed && <span>Logout</span>}
+            {isLoggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
+            {!isCollapsed && <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>}
           </button>
         </div>
       </aside>

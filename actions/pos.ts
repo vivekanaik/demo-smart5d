@@ -26,6 +26,8 @@ export async function createOrder(data: {
   guestName: string;
   tableNumber: string;
   contactNumber?: string;
+  cashierName?: string;
+  notes?: string;
   total: number;
   items: { id: number; name: string; price: number; quantity: number }[];
 }) {
@@ -38,6 +40,8 @@ export async function createOrder(data: {
       guestName: data.guestName,
       tableNumber: data.tableNumber,
       contactNumber: data.contactNumber,
+      cashierName: data.cashierName,
+      notes: data.notes,
       total: data.total,
       status: "active",
     });
@@ -54,15 +58,15 @@ export async function createOrder(data: {
 
     await db.insert(orderItems).values(itemsToInsert);
     
-    // 3. Update Table Status to occupied (only if it's a real table number)
-    if (data.tableNumber !== "Pickup") {
+    // 3. Update Table Status to occupied (only for real numbered tables)
+    if (data.tableNumber !== "Pickup" && data.tableNumber !== "NA") {
       await db.update(tables)
         .set({ status: "occupied" })
         .where(eq(tables.tableNumber, parseInt(data.tableNumber)));
     }
 
     revalidatePath("/admin/orders");
-    revalidatePath("/admin/pos");
+    revalidatePath("/admin/billing");
     revalidatePath("/admin/tables");
     
     return { success: true, orderId };

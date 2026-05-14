@@ -6,11 +6,13 @@ import useSWR from "swr";
 import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import { 
   Settings, Utensils, ReceiptText, ShieldAlert, Plus, Edit2, Trash2, X, Save, 
-  ArrowLeft, Eye, Image as ImageIcon, Bell, Globe, CheckCircle2
+  ArrowLeft, Eye, Image as ImageIcon, Bell, Globe, CheckCircle2, LogOut, Loader2
 } from "lucide-react";
 import { 
-  getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getSettings, updateGstRate, updatePassword, updateBillingSettings 
+  getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, getSettings, updateGstRate, updateBillingSettings 
 } from "@/actions/settings";
+import { chefLogout } from "@/actions/auth";
+import { useRouter } from "next/navigation";
 import ChefHeader from "@/components/ChefHeader";
 
 
@@ -59,9 +61,11 @@ interface WaiterRequest {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<"menu" | "security" | "language">("menu");
+  const [activeTab, setActiveTab] = useState<"menu" | "language">("menu");
   const [chefLanguage, setChefLanguage] = useState<string>("en");
   const [showLangModal, setShowLangModal] = useState<boolean>(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const saved = localStorage.getItem("chefPreferredLanguage");
@@ -88,7 +92,6 @@ export default function SettingsPage() {
     name: "", description: "", price: "", category: "Main Course", diet: "Veg", ingredients: "", 
     nutrition: { calories: "", protein: "", carbs: "", fat: "" }, modelUrl: "", photoUrl: "" 
   });
-  const [newPassword, setNewPassword] = useState("");
 
   // --- NOTIFICATION STATE ---
   const [waiterRequests, setWaiterRequests] = useState<WaiterRequest[]>([]);
@@ -191,12 +194,11 @@ export default function SettingsPage() {
 
 
 
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 6) return alert("Password must be at least 6 characters.");
-    await updatePassword(newPassword);
-    setNewPassword("");
-    alert("Password updated successfully!");
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await chefLogout();
+    router.push("/chef/login");
+    router.refresh();
   };
 
   return (
@@ -239,16 +241,25 @@ export default function SettingsPage() {
             <h2 className="text-lg sm:text-xl uppercase tracking-[0.2em] font-bold text-black/80 dark:text-white/90">Restaurant Settings</h2>
           </div>
 
-          {/* Tabs */}
-          <div className="flex border-b border-black/10 dark:border-white/10 gap-6 overflow-x-auto scrollbar-hide">
-            <button onClick={() => setActiveTab("menu")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "menu" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
-              <Utensils size={16} /> Menu
-            </button>
-            <button onClick={() => setActiveTab("security")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "security" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
-              <ShieldAlert size={16} /> Security
-            </button>
-            <button onClick={() => setActiveTab("language")} className={`pb-3 text-xs sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "language" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
-              <Globe size={16} /> Language
+          {/* Tabs & Logout */}
+          <div className="flex justify-between items-end border-b border-black/10 dark:border-white/10">
+            <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide">
+              <button onClick={() => setActiveTab("menu")} className={`pb-3 text-[10px] sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "menu" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
+                <Utensils size={14} className="sm:w-4 sm:h-4" /> Menu
+              </button>
+              <button onClick={() => setActiveTab("language")} className={`pb-3 text-[10px] sm:text-sm font-bold uppercase tracking-[0.15em] flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === "language" ? "text-gold border-gold" : "text-black/50 dark:text-white/50 border-transparent"}`}>
+                <Globe size={14} className="sm:w-4 sm:h-4" /> Language
+              </button>
+            </div>
+            
+            <button 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="mb-2 p-2 sm:px-4 sm:py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-lg text-[10px] uppercase tracking-widest font-bold transition disabled:opacity-50 flex items-center gap-2"
+              title="Logout"
+            >
+              {isLoggingOut ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+              <span className="hidden sm:inline">{isLoggingOut ? "Logging out..." : "Logout"}</span>
             </button>
           </div>
         </section>
@@ -356,32 +367,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* SECURITY TAB */}
-          {activeTab === "security" && (
-            <form onSubmit={handlePasswordUpdate} className="max-w-md bg-glass border border-black/10 dark:border-white/10 p-6 rounded-xl space-y-6">
-              <div>
-                <h3 className="font-serif italic text-lg text-black dark:text-white">Admin Authentication</h3>
-                <p className="text-xs text-black/50 dark:text-white/50 mt-1">Update the password required to access the chef dashboard and settings.</p>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-black/60 dark:text-white/60">New Password</label>
-                <input 
-                  type="password" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  required 
-                  minLength={6}
-                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-black dark:text-white transition-all"
-                  placeholder="Enter new admin password"
-                />
-              </div>
 
-              <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black py-3 rounded-xl text-xs uppercase tracking-widest font-bold flex items-center justify-center gap-2 hover:opacity-80 transition shadow-md">
-                <ShieldAlert size={16} /> Update Password
-              </button>
-            </form>
-          )}
 
         </main>
       </div>

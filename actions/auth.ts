@@ -28,3 +28,8 @@ export async function verifyChefPassword(password: string) {
 
   return { success: false, message: "Incorrect password" };
 }
+
+export async function chefLogout() {
+  const cookieStore = await cookies();
+  cookieStore.delete("chef_auth");
+}

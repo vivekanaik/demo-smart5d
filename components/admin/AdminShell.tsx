@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/admin/Sidebar";
 import { Navbar } from "@/components/admin/Navbar";
 import { AdminLanguageProvider } from "@/components/admin/AdminLanguageProvider";
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({ children, role }: { children: ReactNode, role?: "owner" | "manager" | "waiter" }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isStandalonePage = pathname === "/admin/login";
@@ -25,9 +25,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <AdminLanguageProvider>
       <div className="flex min-h-screen w-full bg-zinc-50 font-sans text-zinc-950 selection:bg-yellow-500/30 dark:bg-black dark:text-zinc-50">
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} role={role} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <Navbar onMenuClick={() => setSidebarOpen(true)} />
+          <Navbar onMenuClick={() => setSidebarOpen(true)} role={role} />
           <main data-admin-translate-root className="flex-1 overflow-y-auto px-4 py-5 sm:px-5 md:p-8">
             <div className="mx-auto w-full max-w-7xl">{children}</div>
           </main>

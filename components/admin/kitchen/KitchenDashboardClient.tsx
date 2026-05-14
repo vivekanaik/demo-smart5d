@@ -17,7 +17,7 @@ import {
 import { getAnalytics } from "@/actions/analytics";
 import { getActiveOrders, updateOrderStatus, updateOrderItemStatus, getClosedOrders, getCancelledOrders } from "@/actions/orders";
 import { getSettings } from "@/actions/settings";
-import { MessageCircle, Printer, X } from "lucide-react";
+import { MessageCircle, Printer, X, Loader2 } from "lucide-react";
 
 type OrderItem = {
   id: number;
@@ -65,18 +65,25 @@ function formatDate(dateVal: string | Date) {
   });
 }
 
-function minutesSince(dateVal: string | Date) {
+function formatTimeSince(dateVal: string | Date) {
   const diffMs = Date.now() - new Date(dateVal).getTime();
-  return Math.max(0, Math.floor(diffMs / 60000));
+  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000));
+  if (totalMinutes >= 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  }
+  return `${totalMinutes}m`;
 }
 
 // Receipt HTML Generator
 function generateReceiptHTML(order: Order, settings: any, size: "thermal" | "a5" | "a4" | "custom") {
   const subtotal = order.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const gstRate = settings?.gstRate || 5;
-  const gstAmount = Math.round(subtotal * (gstRate / 100));
-  const cgst = (gstAmount / 2).toFixed(2);
-  const sgst = (gstAmount / 2).toFixed(2);
+  const cgstRate = settings?.cgstRate || 2.5;
+  const sgstRate = settings?.sgstRate || 2.5;
+  const cgst = (subtotal * (cgstRate / 100)).toFixed(2);
+  const sgst = (subtotal * (sgstRate / 100)).toFixed(2);
+  const gstAmount = Math.round(parseFloat(cgst) + parseFloat(sgst));
   const totalQty = order.items.reduce((sum, i) => sum + i.quantity, 0);
   const displayTotal = order.total > 0 ? order.total.toFixed(2) : (subtotal + gstAmount).toFixed(2);
   
@@ -187,11 +194,11 @@ function generateReceiptHTML(order: Order, settings: any, size: "thermal" | "a5"
         <br/>
         <table class="table">
           <tr>
-            <td class="text-right w-60">CGST @ ${(gstRate/2).toFixed(2)}%</td>
+            <td class="text-right w-60">CGST @ ${cgstRate}%</td>
             <td class="text-right w-40">${cgst}</td>
           </tr>
           <tr>
-            <td class="text-right w-60">SGST @ ${(gstRate/2).toFixed(2)}%</td>
+            <td class="text-right w-60">SGST @ ${sgstRate}%</td>
             <td class="text-right w-40">${sgst}</td>
           </tr>
         </table>
@@ -230,6 +237,8 @@ export function KitchenDashboardClient({
   const [checkoutTab, setCheckoutTab] = useState<"whatsapp" | "print" | "direct">("whatsapp");
   const [paymentPhone, setPaymentPhone] = useState("");
   const [billSent, setBillSent] = useState(false);
+  const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
+  const [processingItems, setProcessingItems] = useState<Set<number>>(new Set());
 
   const { data: settings } = useSWR("adminSettings", getSettings);
 
@@ -263,25 +272,20 @@ export function KitchenDashboardClient({
   );
 
   const closeOrder = async (order: Order, status: "completed" | "cancelled") => {
-    // Optimistic Update
-    mutateActive((prev = []) => prev.filter((o) => o.id !== order.id), false);
-    
-    const closedOrder: Order = {
-      ...order,
-      status,
-      closedAt: new Date().toISOString(),
-    };
-
-    if (status === "completed") {
-      mutateClosed((prev = []) => [closedOrder, ...prev], false);
-    } else {
-      mutateCancelled((prev = []) => [closedOrder, ...prev], false);
-    }
+    setProcessingOrders(prev => new Set(prev).add(order.id));
 
     await updateOrderStatus(order.id, status);
-    mutateActive();
-    if (status === "completed") mutateClosed();
-    else mutateCancelled();
+    
+    // Once the update completes, re-fetch the data
+    await mutateActive();
+    if (status === "completed") await mutateClosed();
+    else await mutateCancelled();
+
+    setProcessingOrders(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(order.id);
+      return newSet;
+    });
   };
 
   const restoreOrder = async (order: Order) => {
@@ -307,6 +311,9 @@ export function KitchenDashboardClient({
   };
 
   const toggleItemStatus = async (orderId: string, itemId: number, currentStatus: "pending" | "served") => {
+    if (processingItems.has(itemId)) return;
+    setProcessingItems(prev => new Set(prev).add(itemId));
+
     const newStatus = currentStatus === "pending" ? "served" : "pending";
 
     mutateActive((prevOrders = []) => {
@@ -321,9 +328,16 @@ export function KitchenDashboardClient({
         }
         return order;
       });
-    }, false);
+    }, { revalidate: false });
 
     await updateOrderItemStatus(itemId, newStatus);
+    
+    setProcessingItems(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(itemId);
+      return newSet;
+    });
+    
     mutateActive();
   };
 
@@ -339,13 +353,16 @@ export function KitchenDashboardClient({
     
     const itemsText = checkoutOrder.items.map(i => `- ${i.name} x${i.quantity}`).join("%0A");
     const subtotal = checkoutOrder.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    const gstRate = settings?.gstRate || 5;
-    const gstAmount = Math.round(subtotal * (gstRate / 100));
+    const cgstRate = settings?.cgstRate || 2.5;
+    const sgstRate = settings?.sgstRate || 2.5;
+    const cgst = parseFloat((subtotal * (cgstRate / 100)).toFixed(2));
+    const sgst = parseFloat((subtotal * (sgstRate / 100)).toFixed(2));
+    const gstAmount = Math.round(cgst + sgst);
     
     const upiLink = settings?.upiId ? `upi://pay?pa=${settings?.upiId}&pn=Restaurant&am=${checkoutOrder.total}&cu=INR` : "";
     const billUrl = `${window.location.origin}/bill/${checkoutOrder.id}`;
     
-    const text = `Hello ${checkoutOrder.guestName || "Guest"}, thank you for dining with us! 🏰%0A%0A*Bill Summary (Table ${checkoutOrder.tableNumber})*%0A${itemsText}%0A------------------%0A*Subtotal: ₹${subtotal}*%0A*GST (${gstRate}%): ₹${gstAmount}*%0A*Grand Total: ₹${checkoutOrder.total}*%0A%0A🧾 View your digital bill here: ${billUrl}%0A${upiLink ? `%0A💸 Pay instantly via UPI: ${upiLink}` : ""}`;
+    const text = `Hello ${checkoutOrder.guestName || "Guest"}, thank you for dining with us! 🏰%0A%0A*Bill Summary (Table ${checkoutOrder.tableNumber})*%0A${itemsText}%0A------------------%0A*Subtotal: ₹${subtotal}*%0A*CGST (${cgstRate}%): ₹${cgst}*%0A*SGST (${sgstRate}%): ₹${sgst}*%0A*Grand Total: ₹${checkoutOrder.total}*%0A%0A🧾 View your digital bill here: ${billUrl}%0A${upiLink ? `%0A💸 Pay instantly via UPI: ${upiLink}` : ""}`;
     
     window.open(`https://wa.me/${paymentPhone}?text=${text}`, "_blank");
     setBillSent(true);
@@ -498,13 +515,18 @@ export function KitchenDashboardClient({
                               <div className="flex items-start gap-3">
                                 <button 
                                   onClick={() => toggleItemStatus(order.id, item.id, item.status)}
+                                  disabled={processingItems.has(item.id)}
                                   className={`mt-0.5 shrink-0 w-5 h-5 rounded flex items-center justify-center transition-all ${
                                     item.status === 'served' 
                                       ? 'bg-green-500 text-white' 
                                       : 'border border-zinc-300 dark:border-zinc-700 text-transparent hover:border-green-500 hover:text-green-500'
                                   }`}
                                 >
-                                  <Check size={14} strokeWidth={3} />
+                                  {processingItems.has(item.id) ? (
+                                    <Loader2 className="w-3 h-3 text-zinc-500 animate-spin" />
+                                  ) : (
+                                    <Check size={14} strokeWidth={3} />
+                                  )}
                                 </button>
                                 
                                 <div>
@@ -521,7 +543,7 @@ export function KitchenDashboardClient({
                               
                               {item.status === "pending" && (
                                 <span className="text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-md whitespace-nowrap">
-                                  {minutesSince(item.createdAt)}m
+                                  {formatTimeSince(item.createdAt)}
                                 </span>
                               )}
                             </li>
@@ -538,9 +560,14 @@ export function KitchenDashboardClient({
                         </button>
                         <button
                           onClick={() => closeOrder(order, "cancelled")}
-                          className="py-2.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 dark:border-red-900/50 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 text-xs font-bold uppercase tracking-wider transition-colors"
+                          disabled={processingOrders.has(order.id)}
+                          className="py-2.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 dark:border-red-900/50 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center disabled:opacity-50"
                         >
-                          Cancel Ticket
+                          {processingOrders.has(order.id) ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            "Cancel Ticket"
+                          )}
                         </button>
                       </div>
                     </div>

@@ -11,3 +11,15 @@
   padding-right: 2.5rem !important;
   cursor: pointer;
 }
+
+/* Marquee scrolling animation for long text */
+@keyframes marquee {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 6s linear infinite;
+  will-change: transform;
+}
+

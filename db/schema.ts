@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, timestamp, integer, text, jsonb, date } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, timestamp, integer, text, jsonb, date, real } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const orders = pgTable("orders", {
@@ -6,6 +6,8 @@ export const orders = pgTable("orders", {
     guestName: varchar("guest_name", { length: 100 }).notNull(),
     tableNumber: varchar("table_number", { length: 10 }).notNull(),
     contactNumber: varchar("contact_number", { length: 20 }),
+    cashierName: varchar("cashier_name", { length: 100 }),
+    notes: text("notes"),
     generalNote: text("general_note"),
     total: integer("total").notNull(),
     status: varchar("status", { enum: ["active", "completed", "cancelled"] }).default("active").notNull(),
@@ -53,7 +55,9 @@ export const menuItems = pgTable("menu_items", {
   // ✅ NEW: Settings Table (Single Row)
 export const settings = pgTable("settings", {
     id: integer("id").primaryKey().default(1), // Always 1
-    gstRate: integer("gst_rate").default(5).notNull(), // 0, 5, or 18
+    gstRate: real("gst_rate").default(5).notNull(), // Total GST = cgst + sgst
+    cgstRate: real("cgst_rate").default(0).notNull(), // CGST %
+    sgstRate: real("sgst_rate").default(0).notNull(), // SGST %
     adminPassword: varchar("admin_password", { length: 255 }).default("admin123").notNull(),
     managerPassword: varchar("manager_password", { length: 255 }).default("manager123").notNull(),
     waiterPassword: varchar("waiter_password", { length: 255 }).default("waiter123").notNull(),

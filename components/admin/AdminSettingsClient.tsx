@@ -1,18 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Key, Wallet, Receipt, Save, CheckCircle2, AlertCircle, X } from "lucide-react";
-import { updateGstRate, updateBillingSettings, updatePassword } from "@/actions/settings";
+import { Wallet, Receipt, Save, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { updateGstRate, updateGstRates, updateBillingSettings, updatePassword } from "@/actions/settings";
 
 export function AdminSettingsClient({ initialSettings }: { initialSettings: any }) {
-  const [gstRate, setGstRate] = useState<number>(initialSettings?.gstRate || 5);
+  const [cgstRate, setCgstRate] = useState<number>(initialSettings?.cgstRate || 0);
+  const [sgstRate, setSgstRate] = useState<number>(initialSettings?.sgstRate || 0);
   const [upiId, setUpiId] = useState(initialSettings?.upiId || "");
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(initialSettings?.qrCodeUrl || null);
-  const [newPassword, setNewPassword] = useState("");
-  
   const [isSavingTax, setIsSavingTax] = useState(false);
   const [isSavingBilling, setIsSavingBilling] = useState(false);
-  const [isSavingAuth, setIsSavingAuth] = useState(false);
 
   // Custom Modal State
   const [modalMessage, setModalMessage] = useState<{ title: string; message: string; type: 'success' | 'error' } | null>(null);
@@ -23,9 +21,10 @@ export function AdminSettingsClient({ initialSettings }: { initialSettings: any 
 
   const handleTaxSubmit = async () => {
     setIsSavingTax(true);
-    await updateGstRate(gstRate);
+    const totalGst = cgstRate + sgstRate;
+    await updateGstRates(totalGst, cgstRate, sgstRate);
     setIsSavingTax(false);
-    showModal("Success", "Tax Settings updated successfully.", "success");
+    showModal("Success", "Tax settings updated successfully.", "success");
   };
 
   const handleBillingSubmit = async () => {
@@ -35,17 +34,7 @@ export function AdminSettingsClient({ initialSettings }: { initialSettings: any 
     showModal("Success", "Payment Information updated successfully.", "success");
   };
 
-  const handlePasswordSubmit = async () => {
-    if (newPassword.length < 6) {
-      showModal("Error", "Password must be at least 6 characters.", "error");
-      return;
-    }
-    setIsSavingAuth(true);
-    await updatePassword(newPassword);
-    setNewPassword("");
-    setIsSavingAuth(false);
-    showModal("Success", "Admin password updated successfully.", "success");
-  };
+
 
   const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,24 +61,47 @@ export function AdminSettingsClient({ initialSettings }: { initialSettings: any 
           <Receipt className="h-5 w-5 text-yellow-600" />
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Billing & Taxes</h2>
         </div>
-        <div className="space-y-4 p-4 sm:p-6">
-          <div className="max-w-xs">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Global GST Rate (%)
-            </label>
-            <select 
-              value={gstRate}
-              onChange={(e) => setGstRate(Number(e.target.value))}
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 bg-white text-zinc-900 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-            >
-              <option value="0">0%</option>
-              <option value="5">5%</option>
-              <option value="12">12%</option>
-              <option value="18">18%</option>
-            </select>
-            <p className="text-xs text-zinc-500 mt-2">This rate will automatically apply to all incoming orders on the POS system.</p>
+        <div className="space-y-5 p-4 sm:p-6">
+          <div className="grid grid-cols-2 gap-4 max-w-sm">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">CGST Rate (%)</label>
+              <select
+                value={cgstRate}
+                onChange={(e) => setCgstRate(Number(e.target.value))}
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 bg-white text-zinc-900 focus:border-yellow-500 focus:outline-none sm:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                <option value={0}>0%</option>
+                <option value={2.5}>2.5%</option>
+                <option value={6}>6%</option>
+                <option value={9}>9%</option>
+                <option value={14}>14%</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">SGST Rate (%)</label>
+              <select
+                value={sgstRate}
+                onChange={(e) => setSgstRate(Number(e.target.value))}
+                className="w-full rounded-md border border-zinc-300 px-3 py-2 bg-white text-zinc-900 focus:border-yellow-500 focus:outline-none sm:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                <option value={0}>0%</option>
+                <option value={2.5}>2.5%</option>
+                <option value={6}>6%</option>
+                <option value={9}>9%</option>
+                <option value={14}>14%</option>
+              </select>
+            </div>
           </div>
-          <button 
+
+          {/* Live preview */}
+          <div className="flex items-center rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/40 px-3 py-2 max-w-sm">
+            <span className="text-xs text-yellow-700 dark:text-yellow-400 font-medium">
+              On a ₹1,000 bill: CGST {cgstRate}% = ₹{(1000 * cgstRate / 100).toFixed(2)}&nbsp;|&nbsp;SGST {sgstRate}% = ₹{(1000 * sgstRate / 100).toFixed(2)}&nbsp;|&nbsp;<strong>Total = ₹{(1000 * (cgstRate + sgstRate) / 100).toFixed(2)}</strong>
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-500">These rates apply to all orders on the Billing system. Typically CGST = SGST for intra-state sales.</p>
+
+          <button
             onClick={handleTaxSubmit}
             disabled={isSavingTax}
             className="flex items-center justify-center gap-2 w-full sm:w-auto rounded-md bg-yellow-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-700 disabled:opacity-50"
@@ -162,34 +174,7 @@ export function AdminSettingsClient({ initialSettings }: { initialSettings: any 
         </div>
       </div>
 
-      {/* Security */}
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-zinc-200 p-4 dark:border-zinc-800 sm:p-6 bg-zinc-50 dark:bg-zinc-900/50">
-          <Key className="h-5 w-5 text-yellow-600" />
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Security</h2>
-        </div>
-        <div className="space-y-4 p-4 sm:p-6">
-          <div className="max-w-md">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Admin Access Password
-            </label>
-            <input 
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 bg-white text-zinc-900 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-            />
-          </div>
-          <button 
-            onClick={handlePasswordSubmit}
-            disabled={isSavingAuth || newPassword.length < 6}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto rounded-md bg-yellow-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-700 disabled:opacity-50"
-          >
-            {isSavingAuth ? "Updating..." : "Update Password"}
-          </button>
-        </div>
-      </div>
+
 
       {/* Custom Modal */}
       {modalMessage && (

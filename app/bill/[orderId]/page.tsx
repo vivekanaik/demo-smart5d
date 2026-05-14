@@ -14,15 +14,16 @@ export default async function BillPage(props: { params: Promise<{ orderId: strin
   }
 
   const settings = await getSettings();
-  const gstRate = settings?.gstRate ?? 5;
+  const cgstRate = settings?.cgstRate ?? 2.5;
+  const sgstRate = settings?.sgstRate ?? 2.5;
   const upiId = settings?.upiId;
   const qrCodeUrl = settings?.qrCodeUrl;
-
-  const subtotal = order.total; // In previous logic order.total is the cartGrandTotal or the subtotal? Wait, earlier in actions/orders.ts, it appends to existingOrder.total, and in page.tsx, cartGrandTotal is saved as `total`. Let's calculate from items to be safe, or just use order.total.
   
   // Recalculate subtotal from items to accurately display tax
   const calculatedSubtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const gstAmount = Math.round(calculatedSubtotal * (gstRate / 100));
+  const cgstAmount = parseFloat((calculatedSubtotal * (cgstRate / 100)).toFixed(2));
+  const sgstAmount = parseFloat((calculatedSubtotal * (sgstRate / 100)).toFixed(2));
+  const gstAmount = Math.round(cgstAmount + sgstAmount);
   const grandTotal = calculatedSubtotal + gstAmount;
 
   // Ensure total is correctly displayed
@@ -77,8 +78,12 @@ export default async function BillPage(props: { params: Promise<{ orderId: strin
               <span>₹{calculatedSubtotal}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-black/60 dark:text-white/60">GST ({gstRate}%)</span>
-              <span>₹{gstAmount}</span>
+              <span className="text-black/60 dark:text-white/60">CGST ({cgstRate}%)</span>
+              <span>₹{cgstAmount}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-black/60 dark:text-white/60">SGST ({sgstRate}%)</span>
+              <span>₹{sgstAmount}</span>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm uppercase tracking-widest font-bold">Total</span>

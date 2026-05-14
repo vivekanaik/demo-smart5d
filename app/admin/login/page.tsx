@@ -22,17 +22,19 @@ export default function AdminLoginPage() {
       if (result.success && result.role) {
         // Redirect based on role
         if (result.role === "waiter") {
-          router.push("/admin/pos");
+          router.push("/admin/billing");
         } else {
           router.push("/admin");
         }
         router.refresh();
+        // Keep loading state true while redirecting
+        return;
       } else {
         setError(result.message || "Incorrect password. Please try again.");
+        setLoading(false);
       }
     } catch {
       setError("Something went wrong. Please try again.");
-    } finally {
       setLoading(false);
     }
   };

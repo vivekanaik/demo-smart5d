@@ -59,16 +59,33 @@ async function ensureSettingsExist() {
 export async function getSettings() {
   await ensureSettingsExist();
   const data = await db.query.settings.findFirst();
-  return data || { id: 1, gstRate: 5, adminPassword: "admin", upiId: null, qrCodeUrl: null };
+  return data || { id: 1, gstRate: 5, cgstRate: 0, sgstRate: 0, adminPassword: "admin", upiId: null, qrCodeUrl: null };
 }
+
+import { revalidatePath } from "next/cache";
 
 export async function updateGstRate(rate: number) {
   try {
     await ensureSettingsExist();
     await db.update(settings).set({ gstRate: rate }).where(eq(settings.id, 1));
+    revalidatePath("/admin/settings");
+    revalidatePath("/admin/billing");
     return { success: true };
   } catch (error) {
     console.error("Failed to update GST:", error);
+    return { success: false };
+  }
+}
+
+export async function updateGstRates(gstRate: number, cgstRate: number, sgstRate: number) {
+  try {
+    await ensureSettingsExist();
+    await db.update(settings).set({ gstRate, cgstRate, sgstRate }).where(eq(settings.id, 1));
+    revalidatePath("/admin/settings");
+    revalidatePath("/admin/billing");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update GST rates:", error);
     return { success: false };
   }
 }

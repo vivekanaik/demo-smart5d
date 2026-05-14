@@ -162,6 +162,34 @@ const hi: TranslationMap = {
   "manager": "मैनेजर",
   "cashier": "कैशियर",
   "chef": "शेफ",
+  // Notification page
+  "Preferences": "प्राथमिकताएं",
+  "Inventory Alerts": "इन्वेंटरी अलर्ट",
+  "Payments Due": "भुगतान बकाया",
+  "Staff on Leave": "स्टाफ छुट्टी पर",
+  "Newest First": "नवीनतम पहले",
+  "Oldest First": "पुराना पहले",
+  "All caught up!": "सब ठीक है!",
+  "There are no new notifications matching your current filters.": "आपके फिल्टर से मेल खाती कोई नई सूचना नहीं है.",
+  "System alerts and operational requests.": "सिस्टम अलर्ट और परिचालन अनुरोध.",
+  "View": "देखें",
+  // Dynamic notification titles
+  "on Leave Today": "आज छुट्टी पर",
+  "on Leave Tomorrow": "कल छुट्टी पर",
+  "Low Stock:": "कम स्टॉक:",
+  "Payment Due: Table": "भुगतान बकाया: टेबल",
+  "Booking at": "बुकिंग",
+  "Assistance": "सहायता",
+  // Dynamic notification messages
+  "Customer requested a waiter.": "ग्राहक ने वेटर बुलाया.",
+  "Casual leave until": "आकस्मिक छुट्टी तक",
+  "Sick leave until": "बीमार छुट्टी तक",
+  "Earned leave until": "अर्जित छुट्टी तक",
+  "Unpaid leave until": "अवैतनिक छुट्टी तक",
+  "Casual leave from": "आकस्मिक छुट्टी से",
+  "Sick leave from": "बीमार छुट्टी से",
+  "Earned leave from": "अर्जित छुट्टी से",
+  "Unpaid leave from": "अवैतनिक छुट्टी से",
 };
 
 const mr: TranslationMap = {
@@ -317,6 +345,32 @@ const mr: TranslationMap = {
   "manager": "मॅनेजर",
   "cashier": "कॅशियर",
   "chef": "शेफ",
+  // Notification page
+  "Preferences": "प्राधान्ये",
+  "Inventory Alerts": "इन्व्हेंटरी अलर्ट",
+  "Payments Due": "देय पेमेंट",
+  "Staff on Leave": "कर्मचारी रजेवर",
+  "Newest First": "नवीनतम प्रथम",
+  "Oldest First": "जुने प्रथम",
+  "All caught up!": "सर्व ठीक आहे!",
+  "There are no new notifications matching your current filters.": "तुमच्या फिल्टरशी जुळणाऱ्या नवीन सूचना नाहीत.",
+  "System alerts and operational requests.": "सिस्टम अलर्ट आणि परिचालन विनंत्या.",
+  "View": "पहा",
+  "on Leave Today": "आज रजेवर",
+  "on Leave Tomorrow": "उद्या रजेवर",
+  "Low Stock:": "कमी स्टॉक:",
+  "Payment Due: Table": "देय पेमेंट: टेबल",
+  "Booking at": "बुकिंग",
+  "Assistance": "सहाय्य",
+  "Customer requested a waiter.": "ग्राहकाने वेटर मागितला.",
+  "Casual leave until": "आकस्मिक रजा पर्यंत",
+  "Sick leave until": "आजारी रजा पर्यंत",
+  "Earned leave until": "अर्जित रजा पर्यंत",
+  "Unpaid leave until": "अवेतनिक रजा पर्यंत",
+  "Casual leave from": "आकस्मिक रजा पासून",
+  "Sick leave from": "आजारी रजा पासून",
+  "Earned leave from": "अर्जित रजा पासून",
+  "Unpaid leave from": "अवेतनिक रजा पासून",
 };
 
 const gu: TranslationMap = {
@@ -472,6 +526,32 @@ const gu: TranslationMap = {
   "manager": "મેનેજર",
   "cashier": "કેશિયર",
   "chef": "શેફ",
+  // Notification page
+  "Preferences": "પ્રાથમિકતાઓ",
+  "Inventory Alerts": "ઇન્વેન્ટરી એલર્ટ",
+  "Payments Due": "ચૂકવણી બાકી",
+  "Staff on Leave": "સ્ટાફ રજા પર",
+  "Newest First": "નવીનતમ પ્રથમ",
+  "Oldest First": "જૂનું પ્રથમ",
+  "All caught up!": "બધું બરોબર છે!",
+  "There are no new notifications matching your current filters.": "તમારા ફિલ્ટર સાથે મેળ ખાતી કોઈ નવી સૂચના નથી.",
+  "System alerts and operational requests.": "સિસ્ટમ એલર્ટ અને ઓપરેશનલ વિનંતીઓ.",
+  "View": "જુઓ",
+  "on Leave Today": "આજે રજા પર",
+  "on Leave Tomorrow": "કાલે રજા પર",
+  "Low Stock:": "ઓછો સ્ટોક:",
+  "Payment Due: Table": "ચૂકવણી બાકી: ટેબલ",
+  "Booking at": "બુકિંગ",
+  "Assistance": "સહાય",
+  "Customer requested a waiter.": "ગ્રાહકે વેઇટર માંગ્યો.",
+  "Casual leave until": "આકસ્મિક રજા સુધી",
+  "Sick leave until": "બીમારીની રજા સુધી",
+  "Earned leave until": "અર્જિત રજા સુધી",
+  "Unpaid leave until": "અવેતન રજા સુધી",
+  "Casual leave from": "આકસ્મિક રજા",
+  "Sick leave from": "બીમારીની રજા",
+  "Earned leave from": "અર્જિત રજા",
+  "Unpaid leave from": "અવેતન રજા",
 };
 
 const ADMIN_DATA_TRANSLATIONS: Record<Exclude<AdminLanguage, "en">, TranslationMap> = {
@@ -814,6 +894,78 @@ export function translateAdminText(text: string, language: AdminLanguage): strin
   if (trend) {
     const suffix = language === "hi" ? "पिछले महीने से" : language === "mr" ? "मागील महिन्यापासून" : "ગયા મહિનાથી";
     return `${leading}${trend[1]} ${suffix}${trailing}`;
+  }
+
+  // "Rahul on Leave Today" / "Rahul on Leave Tomorrow"
+  const leaveToday = normalized.match(/^(.+) on Leave Today$/);
+  if (leaveToday && dictionary["on Leave Today"]) {
+    return `${leading}${leaveToday[1]} ${dictionary["on Leave Today"]}${trailing}`;
+  }
+
+  const leaveTomorrow = normalized.match(/^(.+) on Leave Tomorrow$/);
+  if (leaveTomorrow && dictionary["on Leave Tomorrow"]) {
+    return `${leading}${leaveTomorrow[1]} ${dictionary["on Leave Tomorrow"]}${trailing}`;
+  }
+
+  // "Table 5 Assistance"
+  const tableAssistance = normalized.match(/^Table (.+) Assistance$/);
+  if (tableAssistance && dictionary.Table && dictionary.Assistance) {
+    return `${leading}${dictionary.Table} ${tableAssistance[1]} ${dictionary.Assistance}${trailing}`;
+  }
+
+  // "Low Stock: Onions"
+  const lowStock = normalized.match(/^Low Stock: (.+)$/);
+  if (lowStock && dictionary["Low Stock:"]) {
+    return `${leading}${dictionary["Low Stock:"]} ${lowStock[1]}${trailing}`;
+  }
+
+  // "Payment Due: Table 3"
+  const paymentDue = normalized.match(/^Payment Due: Table (.+)$/);
+  if (paymentDue && dictionary["Payment Due: Table"]) {
+    return `${leading}${dictionary["Payment Due: Table"]} ${paymentDue[1]}${trailing}`;
+  }
+
+  // "Booking at 7:30 PM"
+  const bookingAt = normalized.match(/^Booking at (.+)$/);
+  if (bookingAt && dictionary["Booking at"]) {
+    return `${leading}${dictionary["Booking at"]} ${bookingAt[1]}${trailing}`;
+  }
+
+  // "Casual leave until 15 May." / "Sick leave until ..."
+  const leaveUntil = normalized.match(/^(Casual|Sick|Earned|Unpaid) leave until (.+)$/);
+  if (leaveUntil && dictionary[`${leaveUntil[1]} leave until`]) {
+    return `${leading}${dictionary[`${leaveUntil[1]} leave until`]} ${leaveUntil[2]}${trailing}`;
+  }
+
+  // "Casual leave from 16 May."
+  const leaveFrom = normalized.match(/^(Casual|Sick|Earned|Unpaid) leave from (.+)$/);
+  if (leaveFrom && dictionary[`${leaveFrom[1]} leave from`]) {
+    return `${leading}${dictionary[`${leaveFrom[1]} leave from`]} ${leaveFrom[2]}${trailing}`;
+  }
+
+  // "Only 3 kg left. Min stock is 10."
+  const lowStockMsg = normalized.match(/^Only (.+) left\. Min stock is (\d+)\.$/);
+  if (lowStockMsg) {
+    const left = language === "hi" ? "केवल" : language === "mr" ? "फक्त" : "માત્ર";
+    const leftEnd = language === "hi" ? "बचा है" : language === "mr" ? "शिल्लक" : "બાકી";
+    const min = language === "hi" ? "न्यूनतम स्टॉक" : language === "mr" ? "किमान स्टॉक" : "ન્યૂનતમ સ્ટોક";
+    return `${leading}${left} ${lowStockMsg[1]} ${leftEnd}. ${min} ${lowStockMsg[2]} ${language === "hi" ? "है" : language === "mr" ? "आहे" : "છે"}.${trailing}`;
+  }
+
+  // "Order for Guest is active. Total: ₹X"
+  const paymentMsg = normalized.match(/^Order for (.+) is active\. Total: ₹(.+)$/);
+  if (paymentMsg) {
+    const of = language === "hi" ? "का ऑर्डर सक्रिय है" : language === "mr" ? "चा ऑर्डर सक्रिय आहे" : "નો ઓર્ડર સક્રિય છે";
+    const total = language === "hi" ? "कुल" : language === "mr" ? "एकूण" : "કુલ";
+    return `${leading}${paymentMsg[1]} ${of}. ${total}: ₹${paymentMsg[2]}${trailing}`;
+  }
+
+  // "Party of X."  / "NAME - Party of X."
+  const partyOf = normalized.match(/^(.+) - Party of (\d+)\.$/);
+  if (partyOf) {
+    const label = language === "hi" ? "पार्टी" : language === "mr" ? "पार्टी" : "પાર્ટી";
+    const of = language === "hi" ? "की" : language === "mr" ? "ची" : "ની";
+    return `${leading}${partyOf[1]} - ${label} ${of} ${partyOf[2]}.${trailing}`;
   }
 
   return text;

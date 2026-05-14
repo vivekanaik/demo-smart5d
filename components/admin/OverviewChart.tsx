@@ -1,49 +1,72 @@
 "use client";
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
-const data = [
-  { name: "Mon", total: 42000 },
-  { name: "Tue", total: 38000 },
-  { name: "Wed", total: 45000 },
-  { name: "Thu", total: 51000 },
-  { name: "Fri", total: 78000 },
-  { name: "Sat", total: 95000 },
-  { name: "Sun", total: 82000 },
-];
+type ChartDataPoint = { day: string; revenue: number };
 
-export function OverviewChart() {
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const value: number = payload[0].value ?? 0;
+  return (
+    <div className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 shadow-2xl">
+      <p className="text-sm font-semibold text-zinc-200 mb-1">{label}</p>
+      <p className="text-lg font-bold text-yellow-400">
+        ₹{value.toLocaleString("en-IN")}
+      </p>
+      <p className="text-[11px] text-zinc-500 mt-0.5">Daily Revenue</p>
+    </div>
+  );
+}
+
+export function OverviewChart({ data }: { data: ChartDataPoint[] }) {
+  const maxVal = Math.max(...data.map((d) => d.revenue), 1);
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} margin={{ top: 10, right: 4, left: -28, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#3f3f46" opacity={0.2} />
+      <BarChart data={data} margin={{ top: 10, right: 4, left: -12, bottom: 0 }} barCategoryGap="28%">
+        <CartesianGrid
+          strokeDasharray="3 3"
+          vertical={false}
+          stroke="#3f3f46"
+          opacity={0.35}
+        />
         <XAxis
-          dataKey="name"
-          stroke="#888888"
+          dataKey="day"
+          stroke="#52525b"
           fontSize={12}
           tickLine={false}
           axisLine={false}
           dy={10}
+          tick={{ fill: "#71717a", fontWeight: 500 }}
         />
         <YAxis
-          stroke="#888888"
-          fontSize={12}
+          stroke="#52525b"
+          fontSize={11}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(value) => `₹${value / 1000}k`}
+          tickFormatter={(v) => v === 0 ? "₹0" : `₹${(v / 1000).toFixed(0)}k`}
+          tick={{ fill: "#71717a" }}
+          width={46}
         />
-        <Tooltip 
-          cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }}
-          contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }}
-          itemStyle={{ color: '#10b981' }}
-          formatter={(value) => [`₹${Number(value ?? 0).toLocaleString()}`, "Revenue"]}
-        />
-        <Bar
-          dataKey="total"
-          fill="currentColor"
-          radius={[4, 4, 0, 0]}
-          className="fill-yellow-500"
-        />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(234,179,8,0.07)", radius: 6 }} />
+        <Bar dataKey="revenue" radius={[6, 6, 0, 0]} maxBarSize={56}>
+          {data.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={entry.revenue === maxVal && maxVal > 0 ? "#f59e0b" : "#eab308"}
+              opacity={entry.revenue === 0 ? 0.25 : entry.revenue === maxVal ? 1 : 0.8}
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );

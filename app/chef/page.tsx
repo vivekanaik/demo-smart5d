@@ -65,9 +65,15 @@ function formatTime(dateVal: string | Date) {
   });
 }
 
-function minutesSince(dateVal: string | Date) {
+function formatTimeSince(dateVal: string | Date) {
   const diffMs = Date.now() - new Date(dateVal).getTime();
-  return Math.max(0, Math.floor(diffMs / 60000));
+  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000));
+  if (totalMinutes >= 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  }
+  return `${totalMinutes}m`;
 }
 
 function ChefContent() {
@@ -116,6 +122,43 @@ function ChefContent() {
     getActiveOrders,
     { refreshInterval: 5000, fallbackData: [] }
   );
+
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const previousOrderIdsRef = React.useRef<Set<string>>(new Set());
+  const isInitialLoad = React.useRef(true);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/ring.mp3");
+    const unlockAudio = () => {
+      if (audioRef.current) {
+        audioRef.current.play().then(() => {
+          audioRef.current!.pause();
+          audioRef.current!.currentTime = 0;
+        }).catch(() => {});
+      }
+      window.removeEventListener('click', unlockAudio);
+    };
+    window.addEventListener('click', unlockAudio);
+    return () => window.removeEventListener('click', unlockAudio);
+  }, []);
+
+  useEffect(() => {
+    const currentIds = new Set(activeOrders.map(o => o.id));
+    const newIds = [...currentIds].filter(id => !previousOrderIdsRef.current.has(id));
+
+    if (newIds.length > 0 && !isInitialLoad.current) {
+      const isMuted = localStorage.getItem("notification_sound_muted") === "true";
+      if (!isMuted && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
+    }
+
+    previousOrderIdsRef.current = currentIds;
+    if (activeOrders.length > 0 || isInitialLoad.current) {
+      isInitialLoad.current = false;
+    }
+  }, [activeOrders]);
 
   const sortedActiveOrders = useMemo(
     () => [...activeOrders].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
@@ -428,7 +471,7 @@ function ChefContent() {
                                 <div className="flex items-center gap-2 shrink-0">
                                   {item.status === "pending" && (
                                     <span className="text-[9px] text-amber-600/80 dark:text-amber-400/80 hidden sm:block">
-                                      {minutesSince(item.createdAt)}m
+                                      {formatTimeSince(item.createdAt)}
                                     </span>
                                   )}
                                   <span className={`text-[11px] px-2 py-0.5 rounded-full border text-black/70 dark:text-white/70 ${

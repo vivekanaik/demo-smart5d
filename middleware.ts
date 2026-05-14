@@ -4,8 +4,8 @@ import type { NextRequest } from 'next/server';
 // Routes each role can access (beyond login)
 const ROLE_ALLOWED_PATHS: Record<string, string[]> = {
   owner: [], // owner can access everything — empty means no restriction
-  manager: ['/admin', '/admin/orders', '/admin/pos', '/admin/kitchen', '/admin/inventory', '/admin/tables', '/admin/notifications', '/admin/settings', '/admin/dashboard'],
-  waiter: ['/admin/pos', '/admin/tables'],
+  manager: ['/admin', '/admin/orders', '/admin/billing', '/admin/kitchen', '/admin/inventory', '/admin/tables', '/admin/notifications', '/admin/settings', '/admin/dashboard'],
+  waiter: ['/admin/billing', '/admin/tables', '/admin/kitchen'],
 };
 
 export function middleware(req: NextRequest) {

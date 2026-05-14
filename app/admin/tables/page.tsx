@@ -1,12 +1,14 @@
-import { getTablesAndReservations } from "@/actions/tables";
+import { getTables, getUpcomingReservations } from "@/actions/tables";
 import { format } from "date-fns";
-import { Users, Armchair, Plus } from "lucide-react";
+import { Users, Armchair } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NewBookingButton } from "@/components/admin/NewBookingButton";
+import { AddTablesForm } from "@/components/admin/AddTablesForm";
+import { TableCard } from "@/components/admin/TableCard";
 
 export default async function AdminTablesPage() {
-  const result = await getTablesAndReservations();
-  const tables = result.success ? result.tables : [];
-  const reservations = result.success ? result.reservations : [];
+  const tables = await getTables();
+  const reservations = await getUpcomingReservations();
 
   return (
     <div className="space-y-6">
@@ -16,49 +18,34 @@ export default async function AdminTablesPage() {
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">Live floor plan and upcoming bookings.</p>
         </div>
         
-        <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-700 sm:w-auto">
-          <Plus className="h-4 w-4" />
-          New Booking
-        </button>
+        <NewBookingButton tables={tables} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Floor Plan Grid */}
         <div className="lg:col-span-2 space-y-4">
-          <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Armchair className="h-5 w-5 text-yellow-500" />
-            Floor Plan
-          </h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 sm:gap-4">
-            {tables?.map((table) => (
-              <div 
-                key={table.id}
-                className={cn(
-                  "flex min-h-32 flex-col items-center justify-center space-y-2 rounded-xl border p-3 text-center transition-all sm:p-4",
-                  table.status === "available" && "bg-white border-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 hover:border-yellow-500",
-                  table.status === "occupied" && "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50",
-                  table.status === "reserved" && "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-900/50",
-                  table.status === "maintenance" && "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-900/50"
-                )}
-              >
-                <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{table.tableNumber}</div>
-                <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
-                  <Users className="h-3 w-3" />
-                  {table.capacity} Seats
-                </div>
-                <div className={cn(
-                  "text-[10px] uppercase font-bold px-2 py-1 rounded-full",
-                  table.status === "available" && "text-zinc-500 bg-zinc-100 dark:bg-zinc-900",
-                  table.status === "occupied" && "text-yellow-700 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/50",
-                  table.status === "reserved" && "text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/50",
-                  table.status === "maintenance" && "text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/50"
-                )}>
-                  {table.status}
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <Armchair className="h-5 w-5 text-yellow-500" />
+              Floor Plan
+            </h3>
+            <AddTablesForm />
           </div>
+          
+          {tables?.length === 0 ? (
+            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50/50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-900/20">
+              <Armchair className="mb-3 h-10 w-10 text-zinc-400 dark:text-zinc-600" />
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">No tables on the floor</p>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Use the form above to add tables to your floor plan.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 sm:gap-4">
+              {tables?.map((table) => (
+                <TableCard key={table.id} table={table} />
+              ))}
+          </div>
+          )}
         </div>
 
         {/* Reservations List */}

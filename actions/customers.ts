@@ -1,17 +1,36 @@
 "use server";
 
 import { db } from "@/db";
-import { customers } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { orders } from "@/db/schema";
+import { sql, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 export async function getCustomers() {
-  try {
-    const allCustomers = await db.query.customers.findMany({
-      orderBy: [desc(customers.totalSpent)],
-    });
-    return { success: true, customers: allCustomers };
-  } catch (error) {
-    console.error("Failed to fetch customers:", error);
-    return { success: false, error: "Failed to fetch customers." };
-  }
+  const result = await db
+    .select({
+      name: sql<string>`MAX(${orders.guestName})`,
+      phone: orders.contactNumber,
+      totalOrders: sql<number>`COUNT(${orders.id})::int`,
+      totalSpent: sql<number>`SUM(${orders.total})::int`,
+    })
+    .from(orders)
+    .where(sql`${orders.contactNumber} IS NOT NULL AND ${orders.contactNumber} != ''`)
+    .groupBy(orders.contactNumber)
+    .orderBy(sql`SUM(${orders.total}) DESC`); // Order by most spent
+
+  return result;
+}
+
+export async function updateCustomer(oldPhone: string, newName: string, newPhone: string) {
+  if (!oldPhone) return;
+
+  await db
+    .update(orders)
+    .set({
+      guestName: newName,
+      contactNumber: newPhone,
+    })
+    .where(eq(orders.contactNumber, oldPhone));
+    
+  revalidatePath("/admin/customers");
 }

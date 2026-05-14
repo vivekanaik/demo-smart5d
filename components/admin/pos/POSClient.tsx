@@ -21,6 +21,8 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
   const [guestName, setGuestName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [tableNumber, setTableNumber] = useState("");
+  const [cashierName, setCashierName] = useState("");
+  const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = ["All", ...Array.from(new Set(items.map(item => item.category)))];
@@ -128,13 +130,16 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
   const total = subtotal + tax;
 
   const handleSubmit = async () => {
-    if (!guestName || !tableNumber || cart.length === 0) return;
+    if (!guestName || cart.length === 0) return;
+    const resolvedTable = tableNumber || "NA";
     
     setIsSubmitting(true);
     const res = await createOrder({
       guestName,
-      tableNumber,
+      tableNumber: resolvedTable,
       contactNumber,
+      cashierName,
+      notes,
       total: Math.round(total),
       items: cart
     });
@@ -144,7 +149,9 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
       setGuestName("");
       setContactNumber("");
       setTableNumber("");
-      router.refresh(); // Refresh page to get updated tables
+      setCashierName("");
+      setNotes("");
+      router.refresh();
     }
     setIsSubmitting(false);
   };
@@ -203,40 +210,65 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
       <div className="flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:w-96">
         
         {/* Guest & Table Info */}
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-4 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0">
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Guest Name</label>
-            <input
-              type="text"
-              placeholder={t("Enter name")}
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-            />
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-3 bg-zinc-50 dark:bg-zinc-900/50 flex-shrink-0">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Guest Name</label>
+              <input
+                type="text"
+                placeholder={t("Enter name")}
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Cashier Name</label>
+              <input
+                type="text"
+                placeholder="Staff name"
+                value={cashierName}
+                onChange={(e) => setCashierName(e.target.value)}
+                className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Phone (Optional)</label>
+              <input
+                type="tel"
+                placeholder="For digital bill"
+                value={contactNumber}
+                onChange={(e) => setContactNumber(e.target.value)}
+                className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Table</label>
+              <select
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                className="admin-select h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                <option value="">{t("Select Table")}</option>
+                <option value="NA">N/A (No Table)</option>
+                <option value="Pickup">{t("Pickup / Takeaway")}</option>
+                {tables.map((table) => (
+                  <option key={table.id} value={table.tableNumber}>{`${t("Table")} ${table.tableNumber} (${table.capacity} ${t("pax")})`}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Phone Number (Optional)</label>
-            <input
-              type="tel"
-              placeholder="For digital bill"
-              value={contactNumber}
-              onChange={(e) => setContactNumber(e.target.value)}
-              className="h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Notes <span className="text-zinc-400">(e.g. less salt, no onion)</span></label>
+            <textarea
+              placeholder="Special instructions for kitchen..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 resize-none"
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Table</label>
-            <select
-              value={tableNumber}
-              onChange={(e) => setTableNumber(e.target.value)}
-              className="admin-select h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-yellow-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-            >
-              <option value="">{t("Select Table")}</option>
-              <option value="Pickup">{t("Pickup / Takeaway")}</option>
-              {tables.map((table) => (
-                <option key={table.id} value={table.tableNumber}>{`${t("Table")} ${table.tableNumber} (${table.capacity} ${t("pax")})`}</option>
-              ))}
-            </select>
           </div>
         </div>
 
@@ -292,7 +324,7 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
           
           <button
             onClick={handleSubmit}
-            disabled={cart.length === 0 || !guestName || !tableNumber || isSubmitting}
+            disabled={cart.length === 0 || !guestName || isSubmitting}
             className="w-full py-3 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? t("Sending...") : t("Send to Kitchen")}

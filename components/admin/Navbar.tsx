@@ -5,6 +5,7 @@ import { AdminNotificationBell } from "./AdminNotificationBell";
 import { useTheme } from "@/components/ThemeProvider";
 import { useAdminLanguage } from "@/components/admin/AdminLanguageProvider";
 import { ADMIN_LANGUAGES, AdminLanguage } from "@/lib/admin-i18n";
+import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 
 function ThemeToggle() {
@@ -15,20 +16,16 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="relative flex h-7 w-12 items-center rounded-full border border-zinc-200 bg-white px-0.5 text-zinc-500 shadow-sm transition-colors duration-300 hover:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500/30 dark:border-zinc-700 dark:bg-zinc-900"
+      className="relative flex items-center w-12 h-6 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full backdrop-blur-xl cursor-pointer transition-colors duration-500 hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none"
       aria-label={t("Toggle theme")}
       title={isLight ? t("Switch to Dark Mode") : t("Switch to Light Mode")}
     >
-      <Sun className="absolute left-1.5 h-3.5 w-3.5 text-yellow-500" />
-      <Moon className="absolute right-1.5 h-3.5 w-3.5 text-zinc-400 dark:text-zinc-300" />
       <div
-        className={`absolute left-0.5 flex h-6 w-6 items-center justify-center rounded-full shadow-sm ring-1 ring-black/5 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          isLight
-            ? "translate-x-0 bg-yellow-50 text-yellow-600"
-            : "translate-x-5 bg-zinc-950 text-yellow-300 ring-white/10"
+        className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-sm ${
+          isLight ? "translate-x-0 bg-black" : "translate-x-6 bg-white"
         }`}
       >
-        {isLight ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+        <div className={`w-1.5 h-1.5 rounded-full ${isLight ? "bg-white" : "bg-black"}`}></div>
       </div>
     </button>
   );
@@ -92,8 +89,10 @@ function LangDropdown({
 
 export function Navbar({
   onMenuClick,
+  role,
 }: {
   onMenuClick?: () => void;
+  role?: "owner" | "manager" | "waiter";
 }) {
   const { language, setLanguage, t } = useAdminLanguage();
 
@@ -108,11 +107,12 @@ export function Navbar({
       </button>
 
       <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-8">
-        <form className="hidden flex-1 sm:block md:flex-initial">
+        <form className={cn("hidden flex-1 sm:block md:flex-initial transition-all", role === 'waiter' && "opacity-20 grayscale blur-[1px] pointer-events-none select-none")}>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500 dark:text-zinc-400" />
             <input
               type="search"
+              disabled={role === 'waiter'}
               placeholder={t("Search orders, customers, or items...")}
               className="h-9 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-9 pr-4 text-sm outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 md:w-[300px] lg:w-[400px] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-yellow-500"
             />
@@ -128,16 +128,20 @@ export function Navbar({
         <ThemeToggle />
 
         {/* Notification Bell */}
-        <AdminNotificationBell />
+        <AdminNotificationBell role={role} />
 
         {/* Admin Avatar */}
         <div className="flex items-center gap-3 border-l border-zinc-200 pl-3 dark:border-zinc-800 md:pl-4">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 font-bold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-            A
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 font-bold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 uppercase">
+            {(role?.[0] || 'A')}
           </div>
           <div className="hidden md:flex flex-col">
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 leading-none">{t("Admin User")}</span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{t("Super Admin")}</span>
+            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 leading-none capitalize">
+              {role || "Admin User"}
+            </span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              {role === 'owner' ? 'Super Admin' : role === 'manager' ? 'Store Manager' : role === 'waiter' ? 'Floor Staff' : 'Staff'}
+            </span>
           </div>
         </div>
       </div>
