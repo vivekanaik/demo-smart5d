@@ -159,7 +159,7 @@ export async function getDynamicNotifications(): Promise<NotificationItem[]> {
     });
 
   } catch (error) {
-    console.error("Error fetching dynamic notifications:", error);
+    console.warn("Error fetching dynamic notifications:");
   }
 
   // Sort by timestamp descending (newest first) by default

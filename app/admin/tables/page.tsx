@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils";
 import { NewBookingButton } from "@/components/admin/NewBookingButton";
 import { AddTablesForm } from "@/components/admin/AddTablesForm";
 import { TableCard } from "@/components/admin/TableCard";
+import { safeQuery } from "@/lib/safe-query";
 
 export default async function AdminTablesPage() {
-  const tables = await getTables();
-  const reservations = await getUpcomingReservations();
+  const tables = await safeQuery(() => getTables(), [] as any[]);
+  const reservations = await safeQuery(() => getUpcomingReservations(), [] as any[]);
 
   return (
     <div className="space-y-6">

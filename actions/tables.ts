@@ -6,7 +6,11 @@ import { asc, desc, eq, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function getTables() {
-  return await db.select().from(tables).orderBy(asc(tables.tableNumber));
+  try {
+    return await db.select().from(tables).orderBy(asc(tables.tableNumber));
+  } catch {
+    return [];
+  }
 }
 
 export async function createTables(count: number, capacity: number) {
@@ -25,25 +29,27 @@ export async function createTables(count: number, capacity: number) {
 }
 
 export async function getUpcomingReservations() {
-  // Get all pending or confirmed reservations from today onwards
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  return await db
-    .select({
-      id: reservations.id,
-      customerName: reservations.customerName,
-      customerPhone: reservations.customerPhone,
-      tableId: reservations.tableId,
-      tableNumber: tables.tableNumber,
-      reservationTime: reservations.reservationTime,
-      guestsCount: reservations.guestsCount,
-      status: reservations.status,
-    })
-    .from(reservations)
-    .leftJoin(tables, eq(reservations.tableId, tables.id))
-    .where(gte(reservations.reservationTime, today))
-    .orderBy(asc(reservations.reservationTime));
+  try {
+    return await db
+      .select({
+        id: reservations.id,
+        customerName: reservations.customerName,
+        customerPhone: reservations.customerPhone,
+        tableId: reservations.tableId,
+        tableNumber: tables.tableNumber,
+        reservationTime: reservations.reservationTime,
+        guestsCount: reservations.guestsCount,
+        status: reservations.status,
+      })
+      .from(reservations)
+      .leftJoin(tables, eq(reservations.tableId, tables.id))
+      .where(gte(reservations.reservationTime, today))
+      .orderBy(asc(reservations.reservationTime));
+  } catch {
+    return [];
+  }
 }
 
 export async function createReservation(data: {

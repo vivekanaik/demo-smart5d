@@ -5,6 +5,8 @@ import { OrdersTable, Order } from "@/components/admin/OrdersTable";
 import { OrderDetailsModal } from "@/components/admin/OrderDetailsModal";
 import { getAdminOrders } from "@/actions/adminOrders";
 import { RefreshCw } from "lucide-react";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getDb } from "@/lib/db-local";
 
 export default function AdminOrdersClient({
   initialOrders,
@@ -14,6 +16,7 @@ export default function AdminOrdersClient({
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const isOnline = useNetworkStatus();
 
   const applyOrders = useCallback((nextOrders: Order[]) => {
     setOrders(nextOrders);
@@ -25,10 +28,24 @@ export default function AdminOrdersClient({
 
   const fetchOrders = async () => {
     setIsRefreshing(true);
-    const result = await getAdminOrders();
-    if (result.success && result.orders) {
-      applyOrders(result.orders as Order[]);
+    
+    if (!isOnline) {
+      try {
+        const db = await getDb();
+        if (db) {
+          const localOrders = await db.table('activeOrders').toArray();
+          applyOrders(localOrders as Order[]);
+        }
+      } catch (err) {
+        console.error("Offline read failed", err);
+      }
+    } else {
+      const result = await getAdminOrders();
+      if (result.success && result.orders) {
+        applyOrders(result.orders as Order[]);
+      }
     }
+    
     setIsRefreshing(false);
   };
 

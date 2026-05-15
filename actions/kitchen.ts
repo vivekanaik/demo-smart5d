@@ -23,7 +23,7 @@ export async function getActiveKitchenOrders() {
 
     return { success: true, tickets: kitchenTickets };
   } catch (error) {
-    console.error("Failed to fetch kitchen orders:", error);
+    console.warn("Failed to fetch kitchen orders:");
     return { success: false, error: "Failed to fetch kitchen orders." };
   }
 }
@@ -38,7 +38,7 @@ export async function markItemServed(itemId: number) {
     revalidatePath("/admin/orders");
     return { success: true };
   } catch (error) {
-    console.error("Failed to mark item served:", error);
+    console.warn("Failed to mark item served:");
     return { success: false, error: "Failed to update item." };
   }
 }

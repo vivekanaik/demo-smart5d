@@ -1,12 +1,13 @@
 import { getEmployees } from "@/actions/employees";
 import { getLeaveRequests, getHolidays } from "@/actions/leaves";
 import { LeavesPageClient } from "@/components/admin/LeavesPageClient";
+import { safeQuery } from "@/lib/safe-query";
 
 export default async function AdminLeavesPage() {
   const [empResult, leavesResult, holidaysResult] = await Promise.all([
-    getEmployees(),
-    getLeaveRequests(),
-    getHolidays(),
+    safeQuery(() => getEmployees(), { success: false, employees: [] }),
+    safeQuery(() => getLeaveRequests(), { success: false, leaves: [] }),
+    safeQuery(() => getHolidays(), { success: false, holidays: [] }),
   ]);
 
   const employees = (empResult.success ? empResult.employees ?? [] : []).map(e => ({

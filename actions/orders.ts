@@ -62,18 +62,22 @@ export async function submitOrder(orderData: any, itemsData: any[]) {
     // Return the final Order ID so the frontend can display the correct ticket number
     return { success: true, orderId: finalOrderId };
   } catch (error) {
-    console.error("Failed to submit order:", error);
+    console.warn("Failed to submit order:");
     return { success: false, error: "Database error" };
   }
 }
 
 // Get Active orders for the Chef Dashboard
 export async function getActiveOrders() {
-  return await db.query.orders.findMany({
-    where: eq(orders.status, "active"),
-    with: { items: true },
-    orderBy: [desc(orders.createdAt)],
-  });
+  try {
+    return await db.query.orders.findMany({
+      where: eq(orders.status, "active"),
+      with: { items: true },
+      orderBy: [desc(orders.createdAt)],
+    });
+  } catch {
+    return [];
+  }
 }
 
 // Close an entire order
@@ -89,7 +93,7 @@ export async function updateOrderStatus(orderId: string, status: "completed" | "
         .where(eq(orders.id, orderId));
       return { success: true };
     } catch (error) {
-      console.error("Failed to update order:", error);
+      console.warn("Failed to update order:");
       return { success: false };
     }
   }
@@ -102,7 +106,7 @@ export async function updateOrderItemStatus(itemId: number, status: "pending" | 
       .where(eq(orderItems.id, itemId));
     return { success: true };
   } catch (error) {
-    console.error("Failed to update item status:", error);
+    console.warn("Failed to update item status:");
     return { success: false };
   }
 }
@@ -115,27 +119,35 @@ export async function getOrderDetails(orderId: string) {
       with: { items: true },
     });
   } catch (error) {
-    console.error("Failed to fetch order details:", error);
+    console.warn("Failed to fetch order details:");
     return null;
   }
 }
 
 // Get Completed orders
 export async function getClosedOrders() {
-  return await db.query.orders.findMany({
-    where: eq(orders.status, "completed"),
-    with: { items: true },
-    orderBy: [desc(orders.closedAt)],
-    limit: 50, // Limit to recent 50 for performance
-  });
+  try {
+    return await db.query.orders.findMany({
+      where: eq(orders.status, "completed"),
+      with: { items: true },
+      orderBy: [desc(orders.closedAt)],
+      limit: 50,
+    });
+  } catch {
+    return [];
+  }
 }
 
 // Get Cancelled orders
 export async function getCancelledOrders() {
-  return await db.query.orders.findMany({
-    where: eq(orders.status, "cancelled"),
-    with: { items: true },
-    orderBy: [desc(orders.closedAt)],
-    limit: 50, // Limit to recent 50 for performance
-  });
+  try {
+    return await db.query.orders.findMany({
+      where: eq(orders.status, "cancelled"),
+      with: { items: true },
+      orderBy: [desc(orders.closedAt)],
+      limit: 50,
+    });
+  } catch {
+    return [];
+  }
 }

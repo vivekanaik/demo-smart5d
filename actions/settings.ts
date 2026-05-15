@@ -9,9 +9,13 @@ import { eq } from "drizzle-orm";
 // ==============================
 
 export async function getMenuItems() {
-  return await db.query.menuItems.findMany({
-    orderBy: (menuItems, { asc }) => [asc(menuItems.id)]
-  });
+  try {
+    return await db.query.menuItems.findMany({
+      orderBy: (menuItems, { asc }) => [asc(menuItems.id)]
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function addMenuItem(data: any) {
@@ -19,7 +23,7 @@ export async function addMenuItem(data: any) {
     await db.insert(menuItems).values(data);
     return { success: true };
   } catch (error) {
-    console.error("Failed to add menu item:", error);
+    console.warn("Failed to add menu item:");
     return { success: false };
   }
 }
@@ -29,7 +33,7 @@ export async function updateMenuItem(id: number, data: any) {
     await db.update(menuItems).set(data).where(eq(menuItems.id, id));
     return { success: true };
   } catch (error) {
-    console.error("Failed to update menu item:", error);
+    console.warn("Failed to update menu item:");
     return { success: false };
   }
 }
@@ -39,7 +43,7 @@ export async function deleteMenuItem(id: number) {
     await db.delete(menuItems).where(eq(menuItems.id, id));
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete menu item:", error);
+    console.warn("Failed to delete menu item:");
     return { success: false };
   }
 }
@@ -72,7 +76,7 @@ export async function updateGstRate(rate: number) {
     revalidatePath("/admin/billing");
     return { success: true };
   } catch (error) {
-    console.error("Failed to update GST:", error);
+    console.warn("Failed to update GST:");
     return { success: false };
   }
 }
@@ -85,7 +89,7 @@ export async function updateGstRates(gstRate: number, cgstRate: number, sgstRate
     revalidatePath("/admin/billing");
     return { success: true };
   } catch (error) {
-    console.error("Failed to update GST rates:", error);
+    console.warn("Failed to update GST rates:");
     return { success: false };
   }
 }
@@ -96,7 +100,7 @@ export async function updatePassword(newPassword: string) {
     await db.update(settings).set({ adminPassword: newPassword }).where(eq(settings.id, 1));
     return { success: true };
   } catch (error) {
-    console.error("Failed to update password:", error);
+    console.warn("Failed to update password:");
     return { success: false };
   }
 }
@@ -107,7 +111,7 @@ export async function updateBillingSettings(upiId: string, qrCodeUrl: string | n
     await db.update(settings).set({ upiId, qrCodeUrl }).where(eq(settings.id, 1));
     return { success: true };
   } catch (error) {
-    console.error("Failed to update billing settings:", error);
+    console.warn("Failed to update billing settings:");
     return { success: false };
   }
 }

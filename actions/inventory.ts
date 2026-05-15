@@ -12,7 +12,7 @@ export async function getInventory() {
     });
     return { success: true, inventory: items };
   } catch (error) {
-    console.error("Failed to fetch inventory:", error);
+    console.warn("Failed to fetch inventory:");
     return { success: false, error: "Failed to fetch inventory." };
   }
 }
@@ -31,7 +31,7 @@ export async function addInventoryItem(data: {
     revalidatePath("/admin/inventory");
     return { success: true };
   } catch (error) {
-    console.error("Failed to add inventory item:", error);
+    console.warn("Failed to add inventory item:");
     return { success: false, error: "Failed to add item." };
   }
 }
@@ -53,7 +53,7 @@ export async function updateInventoryItem(
     revalidatePath("/admin/inventory");
     return { success: true };
   } catch (error) {
-    console.error("Failed to update inventory item:", error);
+    console.warn("Failed to update inventory item:");
     return { success: false, error: "Failed to update item." };
   }
 }
@@ -64,7 +64,7 @@ export async function deleteInventoryItem(id: number) {
     revalidatePath("/admin/inventory");
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete inventory item:", error);
+    console.warn("Failed to delete inventory item:");
     return { success: false, error: "Failed to delete item." };
   }
 }

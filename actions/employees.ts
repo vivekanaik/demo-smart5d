@@ -13,7 +13,7 @@ export async function getEmployees() {
     const safeEmployees = allEmployees.map(({ passwordHash, ...rest }) => rest);
     return { success: true, employees: safeEmployees };
   } catch (error) {
-    console.error("Failed to fetch employees:", error);
+    console.warn("Failed to fetch employees:");
     return { success: false, error: "Failed to fetch employees." };
   }
 }
@@ -34,7 +34,7 @@ export async function addEmployee(data: {
     revalidatePath("/admin/employees");
     return { success: true };
   } catch (error: any) {
-    console.error("Failed to add employee:", error);
+    console.warn("Failed to add employee:");
     if (error?.message?.includes("unique")) {
       return { success: false, error: "An employee with this email already exists." };
     }
@@ -51,7 +51,7 @@ export async function updateEmployee(
     revalidatePath("/admin/employees");
     return { success: true };
   } catch (error) {
-    console.error("Failed to update employee:", error);
+    console.warn("Failed to update employee:");
     return { success: false, error: "Failed to update employee." };
   }
 }
@@ -62,7 +62,7 @@ export async function deleteEmployee(id: number) {
     revalidatePath("/admin/employees");
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete employee:", error);
+    console.warn("Failed to delete employee:");
     return { success: false, error: "Failed to delete employee." };
   }
 }
@@ -73,7 +73,7 @@ export async function markSalaryPaid(id: number) {
     revalidatePath("/admin/employees");
     return { success: true };
   } catch (error) {
-    console.error("Failed to mark salary paid:", error);
+    console.warn("Failed to mark salary paid:");
     return { success: false, error: "Failed to update salary status." };
   }
 }
@@ -84,7 +84,7 @@ export async function resetSalaryPaid(id: number) {
     revalidatePath("/admin/employees");
     return { success: true };
   } catch (error) {
-    console.error("Failed to reset salary:", error);
+    console.warn("Failed to reset salary:");
     return { success: false, error: "Failed to undo salary payment." };
   }
 }

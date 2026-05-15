@@ -24,6 +24,8 @@ import { getAnalytics } from "@/actions/analytics";
 import { getActiveOrders, updateOrderStatus, updateOrderItemStatus } from "@/actions/orders";
 import { getSettings } from "@/actions/settings"; 
 import ChefHeader from "@/components/ChefHeader";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getDb } from "@/lib/db-local";
 
 // --- Types ---
 type OrderItem = {
@@ -45,6 +47,7 @@ type ActiveOrder = {
   generalNote?: string | null;
   total: number;
   items: OrderItem[];
+  status?: "active" | "completed" | "cancelled";
 };
 
 type ClosedOrder = ActiveOrder & {
@@ -117,10 +120,30 @@ function ChefContent() {
     { refreshInterval: 30000 }
   );
 
+  const isOnline = useNetworkStatus();
+
+  // Offline-resilient fetcher: check navigator.onLine directly to avoid
+  // the React state timing lag, then catch any remaining errors too.
+  const fetchOrders = async (): Promise<ActiveOrder[]> => {
+    try {
+      if (navigator.onLine) return await getActiveOrders() as ActiveOrder[];
+    } catch {/* fall through to local cache */}
+    try {
+      const db = await getDb();
+      if (db) {
+        const all = (await db.table('activeOrders').toArray()) as ActiveOrder[];
+        return all.filter(o => o.status === "active");
+      }
+    } catch (err) {
+      console.error("Failed to read offline orders", err);
+    }
+    return [];
+  };
+
   const { data: activeOrders = [], mutate, isLoading } = useSWR<ActiveOrder[]>(
     "activeOrders",
-    getActiveOrders,
-    { refreshInterval: 5000, fallbackData: [] }
+    fetchOrders,
+    { refreshInterval: isOnline ? 5000 : 0, fallbackData: [] }
   );
 
   const audioRef = React.useRef<HTMLAudioElement | null>(null);

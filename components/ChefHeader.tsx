@@ -6,8 +6,9 @@ import React, { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { usePathname } from "next/navigation"; 
 import { useTheme } from "@/components/ThemeProvider";
-import { Bell, Volume2, VolumeX, X, Settings, LayoutDashboard } from "lucide-react";
+import { Bell, Volume2, VolumeX, X, Settings, LayoutDashboard, WifiOff } from "lucide-react";
 import { getServiceRequests, markRequestsAsResolved } from "@/actions/requests";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 interface ServiceRequest {
   id: number;
@@ -38,6 +39,7 @@ function ThemeToggle() {
 
 export default function ChefHeader({ subtitle = "Chef Console" }: { subtitle?: string }) {
   const pathname = usePathname(); 
+  const isOnline = useNetworkStatus();
 
   const { data: serviceRequests = [], mutate: mutateRequests } = useSWR<ServiceRequest[]>(
     "serviceRequests",
@@ -208,6 +210,13 @@ export default function ChefHeader({ subtitle = "Chef Console" }: { subtitle?: s
           <ThemeToggle />
         </div>
       </header>
+
+      {!isOnline && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium z-40 relative">
+          <WifiOff className="h-4 w-4" />
+          Working Offline: Changes will sync when internet is restored
+        </div>
+      )}
 
       {/* GLOBAL TOAST NOTIFICATION POPUP */}
       {latestToast !== null && (

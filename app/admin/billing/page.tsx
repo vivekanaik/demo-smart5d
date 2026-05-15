@@ -1,12 +1,9 @@
 import { getPOSData } from "@/actions/pos";
 import { POSClient } from "@/components/admin/pos/POSClient";
+import { safeQuery } from "@/lib/safe-query";
 
 export default async function AdminBillingPage() {
-  const data = await getPOSData();
-  
-  if (!data.success) {
-    return <div className="p-8 text-red-500">Failed to load Billing data.</div>;
-  }
+  const data = await safeQuery(() => getPOSData(), { success: false, items: [], tables: [] });
 
   return (
     <div className="flex h-full flex-col space-y-4">

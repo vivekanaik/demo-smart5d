@@ -15,7 +15,7 @@ export async function getAdminOrders() {
     });
     return { success: true, orders: allOrders };
   } catch (error) {
-    console.error("Failed to fetch orders:", error);
+    console.warn("Failed to fetch orders:");
     return { success: false, error: "Failed to fetch orders." };
   }
 }
@@ -32,7 +32,7 @@ export async function updateOrderStatus(orderId: string, status: "active" | "com
     revalidatePath("/admin/orders");
     return { success: true };
   } catch (error) {
-    console.error("Failed to update order:", error);
+    console.warn("Failed to update order:");
     return { success: false, error: "Failed to update order status." };
   }
 }
@@ -46,7 +46,7 @@ export async function updateOrderItemStatus(itemId: number, status: "pending" | 
     revalidatePath("/admin/orders");
     return { success: true };
   } catch (error) {
-    console.error("Failed to update item:", error);
+    console.warn("Failed to update item:");
     return { success: false, error: "Failed to update item status." };
   }
 }

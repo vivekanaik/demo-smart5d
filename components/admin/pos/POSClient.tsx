@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MenuItemCard } from "./MenuItemCard";
-import { Search, Plus, Minus, Trash2, ShoppingBag, Mic, MicOff } from "lucide-react";
-import { createOrder } from "@/actions/pos";
+import { Search, Plus, Minus, Trash2, ShoppingBag, Mic, MicOff, WifiOff, RefreshCw } from "lucide-react";
+import { submitOrderWithFallback, usePendingOrderSync } from "@/hooks/usePendingOrderSync";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getDb } from "@/lib/db-local";
 import { useRouter } from "next/navigation";
 import Fuse from "fuse.js";
 import { useAdminLanguage } from "@/components/admin/AdminLanguageProvider";
@@ -11,10 +13,13 @@ import { useAdminLanguage } from "@/components/admin/AdminLanguageProvider";
 export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
   const router = useRouter();
   const { language, t } = useAdminLanguage();
+  const isOnline = useNetworkStatus();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [isListening, setIsListening] = useState(false);
   const [showMicErrorModal, setShowMicErrorModal] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [offlineToast, setOfflineToast] = useState(false);
   
   // Cart State
   const [cart, setCart] = useState<any[]>([]);
@@ -25,17 +30,61 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const categories = ["All", ...Array.from(new Set(items.map(item => item.category)))];
+  const [localItems, setLocalItems] = useState<any[]>(items);
+  const [localTables, setLocalTables] = useState<any[]>(tables);
+
+  useEffect(() => {
+    const loadOfflineData = async () => {
+      if (items.length === 0 || tables.length === 0) {
+        const db = await getDb();
+        if (db) {
+          if (items.length === 0) {
+            const storedItems = await db.table('menuItems').toArray();
+            setLocalItems(storedItems);
+          }
+          if (tables.length === 0) {
+            const storedTables = await db.table('tables').toArray();
+            setLocalTables(storedTables);
+          }
+        }
+      } else {
+        setLocalItems(items);
+        setLocalTables(tables);
+      }
+    };
+    loadOfflineData();
+  }, [items, tables]);
+
+  const categories = ["All", ...Array.from(new Set(localItems.map(item => item.category)))].filter(Boolean);
+
+  // Poll pending count from local DB
+  useEffect(() => {
+    const refresh = async () => {
+      const db = await getDb();
+      if (!db) return;
+      const count = await db.table('pendingOrders').where("status").anyOf("pending", "failed").count();
+      setPendingCount(count);
+    };
+    refresh();
+    const interval = setInterval(refresh, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Drain pending orders when internet returns
+  const { drainQueue } = usePendingOrderSync(() => {
+    router.refresh();
+    setPendingCount(0);
+  });
 
   const searchableItems = useMemo(() => (
-    items.map((item) => ({
+    localItems.map((item) => ({
       ...item,
       localizedName: t(item.name),
       localizedDescription: item.description ? t(item.description) : "",
       localizedCategory: t(item.category),
       localizedDiet: t(item.diet),
     }))
-  ), [items, t]);
+  ), [localItems, t]);
 
   const fuse = useMemo(() => new Fuse(searchableItems, {
     keys: ['name', 'description', 'category', 'localizedName', 'localizedDescription', 'localizedCategory', 'localizedDiet'],
@@ -134,7 +183,7 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
     const resolvedTable = tableNumber || "NA";
     
     setIsSubmitting(true);
-    const res = await createOrder({
+    const res = await submitOrderWithFallback({
       guestName,
       tableNumber: resolvedTable,
       contactNumber,
@@ -151,7 +200,15 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
       setTableNumber("");
       setCashierName("");
       setNotes("");
-      router.refresh();
+      
+      if (res.offline) {
+        // Show offline toast and bump pending count
+        setOfflineToast(true);
+        setTimeout(() => setOfflineToast(false), 4000);
+        setPendingCount(c => c + 1);
+      } else {
+        router.refresh();
+      }
     }
     setIsSubmitting(false);
   };
@@ -159,6 +216,17 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
   return (
     <div className="flex flex-col gap-4 lg:h-[calc(100vh-6rem)] lg:flex-row lg:gap-6">
       
+      {/* Offline Order Saved Toast */}
+      {offlineToast && (
+        <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-5 py-3.5 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <WifiOff className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">Order saved offline</p>
+            <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">It will sync to kitchen when internet returns</p>
+          </div>
+        </div>
+      )}
+
       {/* Left Menu Grid */}
       <div className="flex min-h-[60vh] flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:min-h-0">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-4">
@@ -254,7 +322,7 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
                 <option value="">{t("Select Table")}</option>
                 <option value="NA">N/A (No Table)</option>
                 <option value="Pickup">{t("Pickup / Takeaway")}</option>
-                {tables.map((table) => (
+                {localTables.map((table) => (
                   <option key={table.id} value={table.tableNumber}>{`${t("Table")} ${table.tableNumber} (${table.capacity} ${t("pax")})`}</option>
                 ))}
               </select>
@@ -322,13 +390,34 @@ export function POSClient({ items, tables }: { items: any[], tables: any[] }) {
             </div>
           </div>
           
+          {/* Submit button */}
           <button
             onClick={handleSubmit}
             disabled={cart.length === 0 || !guestName || isSubmitting}
             className="w-full py-3 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? t("Sending...") : t("Send to Kitchen")}
+            {isSubmitting ? t("Sending...") : !isOnline ? (
+              <span className="flex items-center justify-center gap-2">
+                <WifiOff className="h-4 w-4" />
+                {t("Save Offline")}
+              </span>
+            ) : t("Send to Kitchen")}
           </button>
+
+          {/* Pending sync badge */}
+          {pendingCount > 0 && (
+            <div className="mt-2 flex items-center justify-between rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
+              <span className="flex items-center gap-1.5">
+                <WifiOff className="h-3 w-3" />
+                {pendingCount} order{pendingCount > 1 ? "s" : ""} queued offline
+              </span>
+              {isOnline && (
+                <button onClick={drainQueue} className="flex items-center gap-1 font-medium hover:underline">
+                  <RefreshCw className="h-3 w-3" /> Sync now
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
       </div>

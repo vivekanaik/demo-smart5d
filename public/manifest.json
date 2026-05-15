@@ -1,0 +1,16 @@
+{
+  "name": "5D Menu POS",
+  "short_name": "5D POS",
+  "description": "Smart 5D Restaurant POS and Menu",
+  "start_url": "/admin/dashboard",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#eab308",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

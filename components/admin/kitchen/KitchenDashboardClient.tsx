@@ -17,7 +17,9 @@ import {
 import { getAnalytics } from "@/actions/analytics";
 import { getActiveOrders, updateOrderStatus, updateOrderItemStatus, getClosedOrders, getCancelledOrders } from "@/actions/orders";
 import { getSettings } from "@/actions/settings";
-import { MessageCircle, Printer, X, Loader2 } from "lucide-react";
+import { MessageCircle, Printer, X, Loader2, WifiOff } from "lucide-react";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getDb } from "@/lib/db-local";
 
 type OrderItem = {
   id: number;
@@ -248,21 +250,68 @@ export function KitchenDashboardClient({
     { refreshInterval: 30000 }
   );
 
-  const { data: activeOrders = [], mutate: mutateActive } = useSWR<Order[]>(
+  const isOnline = useNetworkStatus();
+
+  // Offline-resilient fetcher: try server first, fall back to local IndexedDB
+  const fetchActiveOrders = async (): Promise<Order[]> => {
+    try {
+      if (navigator.onLine) return (await getActiveOrders()) as Order[];
+    } catch {/* fall through */}
+    try {
+      const db = await getDb();
+      if (db) {
+        const all = (await db.table('activeOrders').toArray()) as Order[];
+        return all.filter(o => o.status === "active");
+      }
+    } catch (err) {
+      console.error("[Kitchen] IndexedDB read failed", err);
+    }
+    return [];
+  };
+
+  const { data: activeOrders = [], mutate: mutateActive, isLoading: isLoadingOrders } = useSWR<Order[]>(
     "adminActiveOrders",
-    getActiveOrders,
-    { refreshInterval: 5000, fallbackData: initialActiveOrders }
+    fetchActiveOrders,
+    { refreshInterval: isOnline ? 5000 : 0, fallbackData: initialActiveOrders }
   );
+
+  const fetchClosedOrders = async (): Promise<Order[]> => {
+    try {
+      if (navigator.onLine) return (await getClosedOrders()) as Order[];
+    } catch {/* fall through */}
+    try {
+      const db = await getDb();
+      if (db) {
+        const all = (await db.table('activeOrders').toArray()) as Order[];
+        return all.filter(o => o.status === "completed");
+      }
+    } catch {/* ignore */}
+    return closedOrders; // fallback to previous state
+  };
 
   const { data: closedOrders = [], mutate: mutateClosed } = useSWR<Order[]>(
     "adminClosedOrders",
-    getClosedOrders,
+    fetchClosedOrders,
     { fallbackData: initialClosedOrders }
   );
 
+  const fetchCancelledOrders = async (): Promise<Order[]> => {
+    try {
+      if (navigator.onLine) return (await getCancelledOrders()) as Order[];
+    } catch {/* fall through */}
+    try {
+      const db = await getDb();
+      if (db) {
+        const all = (await db.table('activeOrders').toArray()) as Order[];
+        return all.filter(o => o.status === "cancelled");
+      }
+    } catch {/* ignore */}
+    return cancelledOrders;
+  };
+
   const { data: cancelledOrders = [], mutate: mutateCancelled } = useSWR<Order[]>(
     "adminCancelledOrders",
-    getCancelledOrders,
+    fetchCancelledOrders,
     { fallbackData: initialCancelledOrders }
   );
 
@@ -274,12 +323,39 @@ export function KitchenDashboardClient({
   const closeOrder = async (order: Order, status: "completed" | "cancelled") => {
     setProcessingOrders(prev => new Set(prev).add(order.id));
 
-    await updateOrderStatus(order.id, status);
-    
-    // Once the update completes, re-fetch the data
-    await mutateActive();
-    if (status === "completed") await mutateClosed();
-    else await mutateCancelled();
+    // ── Optimistic local update ──────────────────────────────────────
+    const closedOrder: Order = { ...order, status, closedAt: new Date().toISOString() as any };
+    mutateActive((prev = []) => prev.filter(o => o.id !== order.id), false);
+    if (status === "completed") mutateClosed((prev = []) => [closedOrder, ...prev], false);
+    else mutateCancelled((prev = []) => [closedOrder, ...prev], false);
+
+    if (!navigator.onLine) {
+      // ── Offline path: persist to IndexedDB ──────────────────────────
+      try {
+        const db = await getDb();
+        if (db) {
+          await db.table("activeOrders").update(order.id, { status, closedAt: new Date().toISOString() });
+          // Queue a sync operation to update DB when back online
+          await db.table("pendingOrders").add({
+            orderData: { type: "statusUpdate", orderId: order.id, status },
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        console.warn("[Offline] closeOrder local write failed", e);
+      }
+    } else {
+      // ── Online path: sync to server ──────────────────────────────────
+      try {
+        await updateOrderStatus(order.id, status);
+      } catch (e) {
+        console.warn("[Kitchen] closeOrder server sync failed", e);
+      }
+      await mutateActive();
+      if (status === "completed") await mutateClosed();
+      else await mutateCancelled();
+    }
 
     setProcessingOrders(prev => {
       const newSet = new Set(prev);
@@ -289,25 +365,41 @@ export function KitchenDashboardClient({
   };
 
   const restoreOrder = async (order: Order) => {
-    // Optimistic Update
+    // ── Optimistic local update ──────────────────────────────────────
     if (order.status === "completed") {
       mutateClosed((prev = []) => prev.filter((o) => o.id !== order.id), false);
     } else {
       mutateCancelled((prev = []) => prev.filter((o) => o.id !== order.id), false);
     }
-
-    const restoredOrder: Order = {
-      ...order,
-      status: "active",
-      closedAt: null,
-    };
-    
+    const restoredOrder: Order = { ...order, status: "active", closedAt: null };
     mutateActive((prev = []) => [restoredOrder, ...prev], false);
 
-    await updateOrderStatus(order.id, "active");
-    mutateActive();
-    mutateClosed();
-    mutateCancelled();
+    if (!navigator.onLine) {
+      // ── Offline path: persist to IndexedDB ──────────────────────────
+      try {
+        const db = await getDb();
+        if (db) {
+          await db.table("activeOrders").update(order.id, { status: "active", closedAt: null });
+          await db.table("pendingOrders").add({
+            orderData: { type: "statusUpdate", orderId: order.id, status: "active" },
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        console.warn("[Offline] restoreOrder local write failed", e);
+      }
+    } else {
+      // ── Online path: sync to server ──────────────────────────────────
+      try {
+        await updateOrderStatus(order.id, "active");
+      } catch (e) {
+        console.warn("[Kitchen] restoreOrder server sync failed", e);
+      }
+      mutateActive();
+      mutateClosed();
+      mutateCancelled();
+    }
   };
 
   const toggleItemStatus = async (orderId: string, itemId: number, currentStatus: "pending" | "served") => {
@@ -467,7 +559,12 @@ export function KitchenDashboardClient({
         {dashboardView === "orders" && (orderView === "all" || orderView === "active") && (
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Active Kitchen Tickets</h2>
-            {sortedActiveOrders.length > 0 ? (
+            {isLoadingOrders ? (
+              <div className="flex flex-col items-center justify-center p-12 text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900/20">
+                <Loader2 className="h-8 w-8 text-zinc-300 dark:text-zinc-600 animate-spin mb-3" />
+                <p className="text-sm font-medium text-zinc-400 dark:text-zinc-500">Loading kitchen tickets…</p>
+              </div>
+            ) : sortedActiveOrders.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {sortedActiveOrders.map((order) => {
                   const pendingCount = order.items.filter(i => i.status === "pending").length;
@@ -809,6 +906,18 @@ export function KitchenDashboardClient({
               {/* Tab Contents */}
               {checkoutTab === "whatsapp" && (
                 <div className="space-y-4">
+                  {/* Offline warning banner */}
+                  {!isOnline && (
+                    <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-700/40 dark:bg-amber-900/20 px-4 py-3">
+                      <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-amber-800 dark:text-amber-300">You're Offline</p>
+                        <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                          WhatsApp requires internet. Use <strong>Direct</strong> tab to close the ticket offline — it will sync when you reconnect.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   {!billSent ? (
                     <>
                       <div>
@@ -825,10 +934,10 @@ export function KitchenDashboardClient({
                       </div>
                       <button 
                         onClick={handleWhatsAppSend}
-                        disabled={!paymentPhone}
+                        disabled={!paymentPhone || !isOnline}
                         className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all shadow-md"
                       >
-                        Send Bill
+                        {isOnline ? "Send Bill" : "Offline — Switch to Direct"}
                       </button>
                     </>
                   ) : (
@@ -852,7 +961,8 @@ export function KitchenDashboardClient({
                         </button>
                         <button 
                           onClick={handleWhatsAppSend}
-                          className="w-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all"
+                          disabled={!isOnline}
+                          className="w-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50 font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all"
                         >
                           Resend Bill
                         </button>

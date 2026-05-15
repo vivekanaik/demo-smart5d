@@ -69,7 +69,7 @@ export async function getAnalytics(timeWindow: AnalyticsWindow) {
     };
 
   } catch (error) {
-    console.error("Failed to fetch analytics:", error);
+    console.warn("Failed to fetch analytics:");
     // Return safe fallback data if query fails
     return {
       revenue: "₹0",

@@ -13,7 +13,7 @@ export async function getLeaveRequests() {
     });
     return { success: true, leaves };
   } catch (error) {
-    console.error("Failed to fetch leave requests:", error);
+    console.warn("Failed to fetch leave requests:");
     return { success: false, error: "Failed to fetch leave requests." };
   }
 }
@@ -30,7 +30,7 @@ export async function addLeaveRequest(data: {
     revalidatePath("/admin/leaves");
     return { success: true };
   } catch (error) {
-    console.error("Failed to add leave request:", error);
+    console.warn("Failed to add leave request:");
     return { success: false, error: "Failed to submit leave request." };
   }
 }
@@ -44,7 +44,7 @@ export async function updateLeaveStatus(
     revalidatePath("/admin/leaves");
     return { success: true };
   } catch (error) {
-    console.error("Failed to update leave status:", error);
+    console.warn("Failed to update leave status:");
     return { success: false, error: "Failed to update status." };
   }
 }
@@ -55,7 +55,7 @@ export async function deleteLeaveRequest(id: number) {
     revalidatePath("/admin/leaves");
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete leave request:", error);
+    console.warn("Failed to delete leave request:");
     return { success: false, error: "Failed to delete leave request." };
   }
 }
@@ -69,7 +69,7 @@ export async function getHolidays() {
     });
     return { success: true, holidays: all };
   } catch (error) {
-    console.error("Failed to fetch holidays:", error);
+    console.warn("Failed to fetch holidays:");
     return { success: false, error: "Failed to fetch holidays." };
   }
 }
@@ -84,7 +84,7 @@ export async function addHoliday(data: {
     revalidatePath("/admin/leaves");
     return { success: true };
   } catch (error) {
-    console.error("Failed to add holiday:", error);
+    console.warn("Failed to add holiday:");
     return { success: false, error: "Failed to add holiday." };
   }
 }
@@ -95,7 +95,7 @@ export async function deleteHoliday(id: number) {
     revalidatePath("/admin/leaves");
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete holiday:", error);
+    console.warn("Failed to delete holiday:");
     return { success: false, error: "Failed to delete holiday." };
   }
 }

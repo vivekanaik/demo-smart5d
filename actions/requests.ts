@@ -6,11 +6,14 @@ import { serviceRequests } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function getServiceRequests() {
-  // findMany returns an array of plain objects, which Next.js can serialize perfectly
-  return await db.query.serviceRequests.findMany({
-    orderBy: [desc(serviceRequests.createdAt)],
-    limit: 50, 
-  });
+  try {
+    return await db.query.serviceRequests.findMany({
+      orderBy: [desc(serviceRequests.createdAt)],
+      limit: 50,
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function markRequestsAsResolved() {

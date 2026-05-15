@@ -171,7 +171,7 @@ export async function getDashboardData() {
       upcomingReservations,
     };
   } catch (error) {
-    console.error("Dashboard data fetch failed:", error);
+    console.warn("Dashboard data fetch failed:");
     return null;
   }
 }

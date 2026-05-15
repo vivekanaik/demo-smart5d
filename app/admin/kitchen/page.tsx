@@ -8,9 +8,19 @@ type KitchenOrders = ComponentProps<typeof KitchenDashboardClient>["initialActiv
 export const dynamic = "force-dynamic";
 
 export default async function AdminKitchenPage() {
-  const activeOrders = await getActiveOrders() as KitchenOrders;
-  const closedOrders = await getClosedOrders() as KitchenOrders;
-  const cancelledOrders = await getCancelledOrders() as KitchenOrders;
+  let activeOrders: KitchenOrders = [];
+  let closedOrders: KitchenOrders = [];
+  let cancelledOrders: KitchenOrders = [];
+
+  try {
+    [activeOrders, closedOrders, cancelledOrders] = await Promise.all([
+      getActiveOrders() as Promise<KitchenOrders>,
+      getClosedOrders() as Promise<KitchenOrders>,
+      getCancelledOrders() as Promise<KitchenOrders>,
+    ]);
+  } catch {
+    // Offline or DB unavailable — client component will load from IndexedDB
+  }
 
   return (
     <div className="space-y-6">

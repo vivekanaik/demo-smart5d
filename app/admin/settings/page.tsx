@@ -1,8 +1,14 @@
 import { getSettings } from "@/actions/settings";
 import { AdminSettingsClient } from "@/components/admin/AdminSettingsClient";
+import { safeQuery } from "@/lib/safe-query";
+import { OfflineFallback } from "@/components/admin/OfflineFallback";
 
 export default async function AdminSettingsPage() {
-  const settings = await getSettings();
+  const settings = await safeQuery(() => getSettings(), null);
+
+  if (!settings) {
+    return <OfflineFallback title="Settings Unavailable" description="Settings couldn't be loaded. Please connect to the internet to load and sync it first." />;
+  }
 
   return (
     <div className="max-w-4xl space-y-6">

@@ -1,9 +1,15 @@
 import { getCustomers } from "@/actions/customers";
 import { CustomersTable } from "@/components/admin/CustomersTable";
 import { Users } from "lucide-react";
+import { safeQuery } from "@/lib/safe-query";
+import { OfflineFallback } from "@/components/admin/OfflineFallback";
 
 export default async function AdminCustomersPage() {
-  const customers = await getCustomers();
+  const customers = await safeQuery(() => getCustomers(), null);
+
+  if (!customers) {
+    return <OfflineFallback title="Customers Unavailable" description="Customer data couldn't be loaded. Please connect to the internet to load and sync it first." />;
+  }
 
   return (
     <div className="space-y-6">

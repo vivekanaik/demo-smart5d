@@ -17,7 +17,7 @@ export async function getPOSData() {
 
     return { success: true, items: allItems, tables: allTables };
   } catch (error) {
-    console.error("Failed to fetch POS data:", error);
+    console.warn("Failed to fetch POS data:");
     return { success: false, error: "Failed to fetch data." };
   }
 }
@@ -71,7 +71,7 @@ export async function createOrder(data: {
     
     return { success: true, orderId };
   } catch (error) {
-    console.error("Failed to create order:", error);
+    console.warn("Failed to create order:");
     return { success: false, error: "Failed to create order." };
   }
 }
