@@ -92,10 +92,16 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
       {/* ── Close button ── */}
       <button
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           onClose();
         }}
-        className="absolute top-4 right-4 z-50 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors"
+        onTouchStart={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }}
+        className="absolute top-4 right-4 z-[99999] w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors cursor-pointer pointer-events-auto"
         aria-label="Close"
       >
         <X className="w-5 h-5" />

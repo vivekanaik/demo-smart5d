@@ -111,7 +111,7 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           ar: true,
           'ar-modes': 'webxr scene-viewer quick-look',
           'ar-placement': 'floor',
-          'ar-scale': 'fixed',
+          'ar-scale': 'auto',
           'camera-orbit': '0deg 75deg auto',
           scale: scale,
           reveal: 'auto',
@@ -141,8 +141,8 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
           </div>
           
           {/* Custom AR Overlay UI */}
-          {showUI && (ingredients || nutrition) && (
-             <div className="absolute inset-0 z-[60] pointer-events-none">
+          {(ingredients || nutrition) && (
+             <div className={`absolute inset-0 z-[60] pointer-events-none transition-opacity duration-300 ${showUI ? 'opacity-100' : 'opacity-0 pointer-events-none hidden'}`}>
                  
                  {/* Buttons - Bottom fixed on Mobile, Top centered on Desktop */}
                  <div className="absolute bottom-10 md:top-6 md:bottom-auto left-0 w-full flex justify-center gap-3 pointer-events-none">
@@ -217,14 +217,6 @@ export default function ModelViewer({ src, alt, poster, id, ingredients, nutriti
              </div>
           )}
 
-          {/* Explicit Custom WebXR Close Button to prevent invisible native buttons */}
-          <button 
-            slot="exit-webxr-ar-button" 
-            className="absolute top-6 right-6 z-[120] w-12 h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/30 text-white pointer-events-auto hover:bg-black/60 shadow-lg cursor-pointer"
-            style={{ display: 'flex', pointerEvents: 'auto' }}
-          >
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
         </>
       )}
     </div>
