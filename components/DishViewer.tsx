@@ -26,7 +26,24 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
   const [isMounted, setIsMounted] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [activePanel, setActivePanel] = useState<Panel>(null);
+  const [isArMode, setIsArMode] = useState(false);
   const viewerRef = useRef<any>(null);
+
+  // Listen for AR status changes to toggle UI visibility
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    const handleArStatus = (e: any) => {
+      if (e.detail.status === 'session-started') {
+        setIsArMode(true);
+      } else if (e.detail.status === 'not-presenting') {
+        setIsArMode(false);
+        setActivePanel(null);
+      }
+    };
+    viewer.addEventListener('ar-status', handleArStatus);
+    return () => viewer.removeEventListener('ar-status', handleArStatus);
+  }, [isMounted]);
 
   // Manual history management removed to prevent Next.js router conflicts
 
@@ -142,6 +159,7 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
             "ar-modes": "webxr scene-viewer quick-look",
             "ar-placement": "floor",
             "ar-scale": "auto",
+            scale: "0.3 0.3 0.3",
             "camera-orbit": "0deg 75deg auto",
             reveal: "auto",
             onLoad: () => setModelLoaded(true),
@@ -155,7 +173,68 @@ export default function DishViewer({ item, resolveModelUrl, onClose, quantity, u
               "--progress-bar-color": "transparent",
             },
           }, 
-            React.createElement("div", { slot: "ar-button", style: { display: "none" } })
+            React.createElement("div", { slot: "ar-button", style: { display: "none" } }),
+            <div key="ar-ui" className={`absolute inset-0 z-[60] pointer-events-none transition-opacity duration-300 ${isArMode ? 'opacity-100' : 'opacity-0 hidden'}`}>
+               <div className="absolute bottom-10 left-0 w-full flex justify-center gap-3 pointer-events-none">
+                  {item.ingredients && (
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePanel("ingredients"); }}
+                      className={`px-6 py-3 rounded-full text-xs uppercase tracking-widest font-bold border transition-all duration-300 pointer-events-auto ${
+                        activePanel === "ingredients"
+                          ? "bg-white/40 border-white text-white shadow-lg backdrop-blur-md"
+                          : "bg-black/40 border-white/20 text-white/90 hover:bg-black/60 shadow-lg backdrop-blur-md"
+                      }`}
+                    >
+                      Ingredients
+                    </button>
+                  )}
+                  {item.nutrition && (
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePanel("nutrition"); }}
+                      className={`px-6 py-3 rounded-full text-xs uppercase tracking-widest font-bold border transition-all duration-300 pointer-events-auto ${
+                        activePanel === "nutrition"
+                          ? "bg-white/40 border-white text-white shadow-lg backdrop-blur-md"
+                          : "bg-black/40 border-white/20 text-white/90 hover:bg-black/60 shadow-lg backdrop-blur-md"
+                      }`}
+                    >
+                      Nutrition
+                    </button>
+                  )}
+               </div>
+
+               {activePanel === "ingredients" && item.ingredients && (
+                 <div className="absolute top-24 left-0 w-full px-4 sm:px-10 flex flex-col items-center pointer-events-none">
+                    <div className="flex flex-col gap-y-4 w-full max-w-md text-center pointer-events-auto bg-black/40 p-6 rounded-2xl backdrop-blur-md border border-white/20">
+                       <p className="text-[10px] uppercase tracking-[0.3em] text-white/70 mb-2 font-bold">Ingredients</p>
+                       <div className="flex flex-wrap justify-center gap-3">
+                         {item.ingredients.map((ing, idx) => (
+                            <span key={idx} className="text-sm font-bold text-white tracking-wide bg-white/20 px-4 py-2 rounded-full border border-white/30 drop-shadow-md">
+                               {ing}
+                            </span>
+                         ))}
+                       </div>
+                    </div>
+                 </div>
+               )}
+
+               {activePanel === "nutrition" && item.nutrition && (
+                 <div className="absolute top-24 left-0 w-full px-4 flex justify-center pointer-events-none">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-14 pointer-events-auto bg-black/40 p-6 rounded-2xl backdrop-blur-md border border-white/20">
+                      {[
+                        { label: "Calories", value: item.nutrition.calories },
+                        { label: "Protein", value: item.nutrition.protein },
+                        { label: "Carbs", value: item.nutrition.carbs },
+                        { label: "Fat", value: item.nutrition.fat },
+                      ].map((n) => (
+                        <div key={n.label} className="text-center">
+                            <p className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-amber-400 mb-1 drop-shadow-md">{n.label}</p>
+                            <p className="text-2xl sm:text-3xl font-bold text-white tracking-wide drop-shadow-lg">{n.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                 </div>
+               )}
+            </div>
           )
         )}
       </div>
