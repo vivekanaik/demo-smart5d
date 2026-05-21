@@ -6,6 +6,8 @@ import { getDb } from "@/lib/db-local";
 import { createOrder } from "@/actions/pos";
 import { updateOrderStatus } from "@/actions/orders";
 
+let globalIsSyncing = false;
+
 /**
  * Runs in the background of any page that imports it.
  * When internet returns, it drains the pendingOrders queue
@@ -13,11 +15,10 @@ import { updateOrderStatus } from "@/actions/orders";
  */
 export function usePendingOrderSync(onSyncComplete?: () => void) {
   const isOnline = useNetworkStatus();
-  const isSyncing = useRef(false);
 
   const drainQueue = useCallback(async () => {
-    if (isSyncing.current) return;
-    isSyncing.current = true;
+    if (globalIsSyncing) return;
+    globalIsSyncing = true;
 
     try {
       const db = await getDb();
@@ -51,6 +52,9 @@ export function usePendingOrderSync(onSyncComplete?: () => void) {
             const res = await createOrder(item.orderData);
             if (res.success) {
               await db.table('pendingOrders').delete(item.localId!);
+              if (item.tempId) {
+                await db.table('activeOrders').delete(item.tempId);
+              }
               console.log(`[OfflineSync] Order ${item.localId} synced ✅`);
             } else {
               await db.table('pendingOrders').update(item.localId!, {
@@ -71,7 +75,7 @@ export function usePendingOrderSync(onSyncComplete?: () => void) {
     } catch (err) {
       console.error("[OfflineSync] Failed to drain queue", err);
     } finally {
-      isSyncing.current = false;
+      globalIsSyncing = false;
     }
   }, [onSyncComplete]);
 
@@ -136,6 +140,7 @@ export async function submitOrderWithFallback(
     // Queue the write for later sync
     await db.table('pendingOrders').add({
       orderData: data,
+      tempId: tempId,
       status: "pending",
       createdAt: new Date().toISOString(),
     });

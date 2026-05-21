@@ -1,5 +1,5 @@
 import { getDashboardData } from "@/actions/dashboard";
-import { OverviewChart } from "@/components/admin/OverviewChart";
+import { RevenueChartWidget } from "@/components/admin/RevenueChartWidget";
 import Link from "next/link";
 import {
   TrendingUp, TrendingDown, DollarSign, ShoppingBag, Armchair,
@@ -42,17 +42,7 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const { kpis, revenueChart, recentOrders, kitchenTickets, lowStockItems, upcomingReservations } = data;
-
-  // Build a full 7-day array (Mon→today order), filling missing days with 0
-  const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const chartData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const label = DAY_ABBR[d.getDay()];
-    const match = revenueChart.find((r) => r.day?.trim() === label);
-    return { day: label, revenue: match?.revenue ?? 0 };
-  });
+  const { kpis, recentOrders, kitchenTickets, lowStockItems, upcomingReservations } = data;
 
   return (
     <div className="space-y-6">
@@ -184,23 +174,9 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* ── ROW 3: Revenue Chart + Recent Orders ── */}
-      <div className="grid gap-4 lg:grid-cols-7">
+      <div className="grid gap-4 lg:grid-cols-7 lg:min-h-[400px]">
         {/* Revenue Chart */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 lg:col-span-4">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <BarChart2 className="h-4 w-4 text-yellow-500" />
-                Revenue Overview
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Daily revenue for the past 7 days.</p>
-            </div>
-            <Link href="/admin/orders" className="text-xs font-medium text-yellow-500 hover:text-yellow-400 flex items-center gap-1">
-              View all orders <ArrowRight size={12} />
-            </Link>
-          </div>
-          <OverviewChart data={chartData} />
-        </div>
+        <RevenueChartWidget />
 
         {/* Recent Orders */}
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 lg:col-span-3">

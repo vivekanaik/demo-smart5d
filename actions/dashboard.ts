@@ -175,3 +175,75 @@ export async function getDashboardData() {
     return null;
   }
 }
+
+export type TimeFrame = "daily" | "weekly" | "monthly" | "6month" | "yearly";
+
+export async function getRevenueChartData(timeFrame: TimeFrame = "daily") {
+  const now = new Date();
+  let startDate = new Date();
+  let groupBySql = sql`DATE_TRUNC('day', ${orders.createdAt})`;
+  let labelSql = sql<string>`TO_CHAR(DATE_TRUNC('day', ${orders.createdAt}), 'Dy')`;
+
+  switch (timeFrame) {
+    case "daily":
+      // Last 7 days, group by day
+      startDate.setDate(now.getDate() - 6);
+      startDate.setHours(0, 0, 0, 0);
+      groupBySql = sql`DATE_TRUNC('day', ${orders.createdAt})`;
+      labelSql = sql<string>`TO_CHAR(DATE_TRUNC('day', ${orders.createdAt}), 'Dy')`; // Mon, Tue
+      break;
+    case "weekly":
+      // Last 4 weeks, group by week
+      startDate.setDate(now.getDate() - 27);
+      startDate.setHours(0, 0, 0, 0);
+      groupBySql = sql`DATE_TRUNC('week', ${orders.createdAt})`;
+      // TO_CHAR with 'WW' gets week number, or just 'DD Mon' of start of week
+      labelSql = sql<string>`TO_CHAR(DATE_TRUNC('week', ${orders.createdAt}), 'DD Mon')`; 
+      break;
+    case "monthly":
+      // Last 12 months, group by month
+      startDate.setMonth(now.getMonth() - 11);
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+      groupBySql = sql`DATE_TRUNC('month', ${orders.createdAt})`;
+      labelSql = sql<string>`TO_CHAR(DATE_TRUNC('month', ${orders.createdAt}), 'Mon')`; // Jan, Feb
+      break;
+    case "6month":
+      // Last 6 months, group by month
+      startDate.setMonth(now.getMonth() - 5);
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+      groupBySql = sql`DATE_TRUNC('month', ${orders.createdAt})`;
+      labelSql = sql<string>`TO_CHAR(DATE_TRUNC('month', ${orders.createdAt}), 'Mon')`; // Jan, Feb
+      break;
+    case "yearly":
+      // Last 5 years, group by year
+      startDate.setFullYear(now.getFullYear() - 4);
+      startDate.setMonth(0);
+      startDate.setDate(1);
+      startDate.setHours(0, 0, 0, 0);
+      groupBySql = sql`DATE_TRUNC('year', ${orders.createdAt})`;
+      labelSql = sql<string>`TO_CHAR(DATE_TRUNC('year', ${orders.createdAt}), 'YYYY')`; // 2023, 2024
+      break;
+  }
+
+  try {
+    const data = await db
+      .select({
+        day: labelSql,
+        revenue: sql<number>`COALESCE(SUM(${orders.total}), 0)::int`,
+        group_date: groupBySql,
+      })
+      .from(orders)
+      .where(and(gte(orders.createdAt, startDate), eq(orders.status, "completed")))
+      .groupBy(groupBySql)
+      .orderBy(groupBySql);
+
+    // We can just return the data directly. The client widget will fill in the missing periods.
+    return { success: true, data: data.map(d => ({ label: d.day, revenue: d.revenue, date: new Date(String(d.group_date)).getTime() })) };
+  } catch (error) {
+    console.error("Failed to fetch revenue chart data:", error);
+    return { success: false, data: [] };
+  }
+}
+

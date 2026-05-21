@@ -8,6 +8,7 @@ import { AdminLanguageProvider } from "@/components/admin/AdminLanguageProvider"
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { usePendingOrderSync } from "@/hooks/usePendingOrderSync";
+import { usePendingBookingSync } from "@/hooks/usePendingBookingSync";
 import { WifiOff } from "lucide-react";
 
 export function AdminShell({ children, role }: { children: ReactNode, role?: "owner" | "manager" | "waiter" }) {
@@ -20,6 +21,8 @@ export function AdminShell({ children, role }: { children: ReactNode, role?: "ow
   useOfflineSync();
   // Drain any queued offline orders when internet returns
   usePendingOrderSync();
+  // Drain any queued offline bookings when internet returns
+  usePendingBookingSync();
 
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? "hidden" : "";

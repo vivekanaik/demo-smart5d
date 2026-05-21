@@ -19,7 +19,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  UtensilsCrossed
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
@@ -37,11 +38,12 @@ const navItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { name: "Billing", href: "/admin/billing", icon: Receipt },
-  { name: "Employees", href: "/admin/employees", icon: Users },
   { name: "Kitchen", href: "/admin/kitchen", icon: ChefHat },
-  { name: "Leaves & Holidays", href: "/admin/leaves", icon: CalendarDays },
-  { name: "Inventory", href: "/admin/inventory", icon: Package },
   { name: "Tables & Bookings", href: "/admin/tables", icon: Armchair },
+  { name: "Menu", href: "/admin/menu", icon: UtensilsCrossed },
+  { name: "Inventory", href: "/admin/inventory", icon: Package },
+  { name: "Leaves & Holidays", href: "/admin/leaves", icon: CalendarDays },
+  { name: "Employees", href: "/admin/employees", icon: Users },
   { name: "Customers", href: "/admin/customers", icon: Users },
   { name: "Notifications", href: "/admin/notifications", icon: Bell },
   { name: "Settings", href: "/admin/settings", icon: Settings },
@@ -56,6 +58,42 @@ type SidebarProps = {
 export function Sidebar({ open = false, onClose, role }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  const [sidebarWidth, setSidebarWidth] = useState(256); // Default 64 tailwind units
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      let newWidth = e.clientX;
+      if (newWidth < 200) newWidth = 200;
+      if (newWidth > 480) newWidth = 480;
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.body.style.userSelect = "none";
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    } else {
+      document.body.style.userSelect = "";
+    }
+    
+    return () => {
+      document.body.style.userSelect = "";
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
@@ -210,22 +248,36 @@ export function Sidebar({ open = false, onClose, role }: SidebarProps) {
       />
 
       <aside
+        suppressHydrationWarning
+        style={{
+          width: !isCollapsed && typeof window !== "undefined" && window.innerWidth >= 768 ? sidebarWidth : undefined
+        }}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-dvh max-w-[85vw] flex-col border-r border-zinc-200 bg-white text-zinc-900 shadow-2xl transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 md:sticky md:top-0 md:z-20 md:h-screen md:max-w-none md:translate-x-0 md:shadow-none",
+          "fixed inset-y-0 left-0 z-50 flex h-dvh max-w-[85vw] flex-col border-r border-zinc-200 bg-white text-zinc-900 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 md:sticky md:top-0 md:z-20 md:h-screen md:max-w-none md:translate-x-0 md:shadow-none",
+          !isResizing && "transition-all duration-300",
           open ? "translate-x-0 w-72" : "-translate-x-full w-72",
-          isCollapsed ? "md:w-20" : "md:w-64"
+          isCollapsed && "md:w-20"
         )}
       >
-        <div className={cn("flex h-16 items-center border-b border-zinc-200 px-5 transition-all dark:border-zinc-800", isCollapsed ? "justify-center px-0" : "justify-between md:px-6")}>
-          {!isCollapsed && (
-            <span className="flex items-center gap-2 text-xl font-bold tracking-tight text-zinc-950 transition-opacity dark:text-white">
-              <Image src="/esvalo.png" alt="Esvalo Logo" width={96} height={32} className="h-6 w-auto object-contain" />
-              Esvalo <span className="font-light text-zinc-500 dark:text-zinc-400">POS</span>
-            </span>
-          )}
-          {isCollapsed && (
-            <Image src="/esvalo.png" alt="Esvalo Logo" width={32} height={32} className="h-6 w-auto object-contain mx-auto" />
-          )}
+        {/* Resize Handle */}
+        {!isCollapsed && (
+          <div
+            onMouseDown={startResizing}
+            className="hidden md:flex absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-yellow-500/50 active:bg-yellow-500 z-50 group items-center justify-center translate-x-1/2"
+          >
+            <div className="w-1 h-12 bg-zinc-300 dark:bg-zinc-700 rounded-full opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity" />
+          </div>
+        )}
+        <div className={cn("flex h-16 items-center border-b border-zinc-200 px-5 transition-all dark:border-zinc-800 justify-between md:px-6", isCollapsed && "md:justify-center md:px-0")}>
+          <span className={cn("flex items-center gap-2 text-xl font-bold tracking-tight text-zinc-950 transition-opacity dark:text-white", isCollapsed && "hidden md:hidden sm:flex")}>
+            <Image src="/esvalo.png" alt="Esvalo Logo" width={96} height={32} className="h-6 w-auto object-contain" />
+            Esvalo <span className="font-light text-zinc-500 dark:text-zinc-400">POS</span>
+          </span>
+          <span className={cn("flex items-center gap-2 text-xl font-bold tracking-tight text-zinc-950 transition-opacity dark:text-white sm:hidden", isCollapsed && "md:hidden")}>
+            <Image src="/esvalo.png" alt="Esvalo Logo" width={96} height={32} className="h-6 w-auto object-contain" />
+            Esvalo
+          </span>
+          <Image src="/esvalo.png" alt="Esvalo Logo" width={32} height={32} className={cn("h-6 w-auto object-contain mx-auto", isCollapsed ? "hidden md:block" : "hidden")} />
           <button
             onClick={onClose}
             className="rounded-md p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100 md:hidden"
@@ -237,8 +289,8 @@ export function Sidebar({ open = false, onClose, role }: SidebarProps) {
 
         <div className="flex-1 overflow-y-auto py-4">
           {/* Role badge */}
-          {!isCollapsed && role && (
-            <div className="px-4 mb-3">
+          {role && (
+            <div className={cn("px-4 mb-3", isCollapsed && "md:hidden")}>
               <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${roleBadge.cls}`}>
                 {roleBadge.label}
               </span>
@@ -265,7 +317,7 @@ export function Sidebar({ open = false, onClose, role }: SidebarProps) {
                   }}
                   className={cn(
                     "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-                    isCollapsed ? "justify-center" : "",
+                    isCollapsed ? "md:justify-center" : "",
                     !allowed && "opacity-40 grayscale cursor-not-allowed",
                     actuallyActive
                       ? "bg-yellow-50 text-yellow-700 shadow-sm dark:bg-yellow-500/10 dark:text-yellow-500"
@@ -284,9 +336,7 @@ export function Sidebar({ open = false, onClose, role }: SidebarProps) {
                       <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-950"></span>
                     )}
                   </div>
-                  {!isCollapsed && (
-                    <span className="flex-1 truncate">{item.name}</span>
-                  )}
+                  <span className={cn("flex-1 truncate", isCollapsed && "md:hidden")}>{item.name}</span>
                 </Link>
               );
             })}
@@ -300,16 +350,16 @@ export function Sidebar({ open = false, onClose, role }: SidebarProps) {
              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
              {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-             {!isCollapsed && <span>Collapse</span>}
+             <span className={cn(isCollapsed && "md:hidden")}>Collapse</span>
           </button>
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className={cn("flex items-center rounded-md text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 dark:text-red-400 md:py-2.5 disabled:opacity-50 disabled:cursor-not-allowed", isCollapsed ? "justify-center py-3 w-full" : "gap-3 px-3 py-3 w-full")}
+            className={cn("flex items-center rounded-md text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 dark:text-red-400 md:py-2.5 disabled:opacity-50 disabled:cursor-not-allowed", isCollapsed ? "md:justify-center py-3 w-full" : "gap-3 px-3 py-3 w-full")}
             title={isCollapsed ? (isLoggingOut ? "Logging out..." : "Logout") : undefined}
           >
             {isLoggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
-            {!isCollapsed && <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>}
+            <span className={cn(isCollapsed && "md:hidden")}>{isLoggingOut ? "Logging out..." : "Logout"}</span>
           </button>
         </div>
       </aside>

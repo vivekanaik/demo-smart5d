@@ -299,7 +299,7 @@ const MenuItem = React.memo(function MenuItem({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
-    <article className={`flex ${isGrid ? 'flex-col min-h-[140px]' : 'flex-row min-h-[8rem] md:min-h-[10rem] h-auto'} bg-glass rounded-sm overflow-hidden group transition-all duration-500 shadow-sm items-stretch`}>
+    <article className={`flex ${isGrid ? 'flex-col min-h-[140px]' : 'flex-row min-h-[8rem] md:min-h-[10rem] h-auto'} bg-glass rounded-sm overflow-hidden group transition-all duration-500 shadow-sm items-stretch ${item.isAvailable === 0 ? 'opacity-60 grayscale pointer-events-none' : ''}`}>
       
       {/* ── Image (no model-viewer here → fast) ── */}
       <div className={`shrink-0 ${isGrid ? 'w-full h-48' : 'w-2/5 md:w-1/4 self-stretch min-h-[8rem] md:min-h-[10rem]'} bg-white/50 dark:bg-black/50 flex items-center justify-center relative overflow-hidden`}>
@@ -408,7 +408,9 @@ const MenuItem = React.memo(function MenuItem({
           {!isGrid && <div className={`hidden md:block transition-[flex-grow,height] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] w-full shrink-0 ${isExpanded ? 'flex-[1]' : 'flex-[0.0001] h-2'}`}></div>}
 
           <div className="shrink-0 z-10 flex flex-col items-end">
-             {quantity > 0 ? (
+             {item.isAvailable === 0 ? (
+               <span className="text-[10px] uppercase font-bold text-black/50 dark:text-white/50 border border-black/10 dark:border-white/10 px-3 py-1.5 rounded-sm">UNAVAILABLE</span>
+             ) : quantity > 0 ? (
                <div className="flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm h-7 md:h-8">
                   <button onClick={() => updateQuantity(item.id, -1)} className="px-2.5 h-full hover:text-gold transition-colors text-black dark:text-white rounded-sm cursor-pointer flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10">
                      <Minus size={12} strokeWidth={3} />
@@ -751,8 +753,8 @@ export default function SmartMenuPage() {
   const cartGrandTotal = useMemo(() => cartSubtotal + gstAmount, [cartSubtotal, gstAmount]);
 
   const filteredItems = useMemo(
-    () =>
-      localizedItems.filter(item => {
+    () => {
+      const items = localizedItems.filter(item => {
         const matchCategory = activeCategory === 'All' || item.category === activeCategory;
         const query = searchQuery.toLowerCase();
         const matchSearch =
@@ -762,7 +764,14 @@ export default function SmartMenuPage() {
             item.ingredients.some((ing: string) => ing.toLowerCase().includes(query)));
         const matchDiet = dietFilter === 'All' || item.diet === dietFilter;
         return matchCategory && matchSearch && matchDiet;
-      }),
+      });
+
+      return items.sort((a, b) => {
+        if (a.isAvailable === 0 && b.isAvailable !== 0) return 1;
+        if (a.isAvailable !== 0 && b.isAvailable === 0) return -1;
+        return 0;
+      });
+    },
     [localizedItems, activeCategory, searchQuery, dietFilter]
   );
 

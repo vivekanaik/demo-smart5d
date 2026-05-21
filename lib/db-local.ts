@@ -54,6 +54,16 @@ export const getDb = async () => {
       activeOrders: 'id, status, createdAt',
       pendingOrders: '++localId, status, createdAt',
       tables: 'id, tableNumber, status'
+    });
+
+    dbInstance.version(4).stores({
+      menuItems: 'id, categoryId, status',
+      categories: 'id',
+      activeOrders: 'id, status, createdAt',
+      pendingOrders: '++localId, status, createdAt',
+      tables: 'id, tableNumber, status',
+      reservations: 'id, tableId, reservationTime',
+      pendingReservations: '++localId, status, createdAt'
     }).upgrade(() => {
       // Handle migrations cleanly
     });

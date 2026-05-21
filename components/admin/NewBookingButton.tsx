@@ -11,7 +11,7 @@ type Table = {
   status: string;
 };
 
-export function NewBookingButton({ tables }: { tables: Table[] }) {
+export function NewBookingButton({ tables, onRefresh }: { tables: Table[], onRefresh?: () => void }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -28,6 +28,7 @@ export function NewBookingButton({ tables }: { tables: Table[] }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         tables={tables}
+        onRefresh={onRefresh}
       />
     </>
   );

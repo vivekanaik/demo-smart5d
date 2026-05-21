@@ -11,7 +11,7 @@ import {
   Cell,
 } from "recharts";
 
-type ChartDataPoint = { day: string; revenue: number };
+type ChartDataPoint = { label: string; revenue: number };
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -22,7 +22,7 @@ function CustomTooltip({ active, payload, label }: any) {
       <p className="text-lg font-bold text-yellow-400">
         ₹{value.toLocaleString("en-IN")}
       </p>
-      <p className="text-[11px] text-zinc-500 mt-0.5">Daily Revenue</p>
+      <p className="text-[11px] text-zinc-500 mt-0.5">Revenue</p>
     </div>
   );
 }
@@ -40,7 +40,7 @@ export function OverviewChart({ data }: { data: ChartDataPoint[] }) {
           opacity={0.35}
         />
         <XAxis
-          dataKey="day"
+          dataKey="label"
           stroke="#52525b"
           fontSize={12}
           tickLine={false}

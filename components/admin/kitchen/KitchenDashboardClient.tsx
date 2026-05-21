@@ -918,55 +918,44 @@ export function KitchenDashboardClient({
                       </div>
                     </div>
                   )}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1 ml-1">
+                      Guest Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={paymentPhone}
+                      onChange={(e) => setPaymentPhone(e.target.value)}
+                      className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-zinc-900 dark:text-zinc-100 transition-all"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
                   {!billSent ? (
-                    <>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1 ml-1">
-                          Guest Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={paymentPhone}
-                          onChange={(e) => setPaymentPhone(e.target.value)}
-                          className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 py-3 px-4 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-zinc-900 dark:text-zinc-100 transition-all"
-                          placeholder="Enter phone number"
-                        />
-                      </div>
+                    <button 
+                      onClick={handleWhatsAppSend}
+                      disabled={!paymentPhone || !isOnline}
+                      className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all shadow-md"
+                    >
+                      {isOnline ? "Send Bill" : "Offline — Switch to Direct"}
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-3 pt-2">
                       <button 
                         onClick={handleWhatsAppSend}
                         disabled={!paymentPhone || !isOnline}
-                        className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all shadow-md"
+                        className="w-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50 font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all"
                       >
-                        {isOnline ? "Send Bill" : "Offline — Switch to Direct"}
+                        Send Again
                       </button>
-                    </>
-                  ) : (
-                    <div className="text-center py-2 space-y-4">
-                      <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mb-2">
-                        <CheckCircle2 size={24} />
-                      </div>
-                      <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg">Bill Sent Successfully</h4>
-                      <p className="text-sm text-zinc-500 px-4">
-                        The digital bill has been sent via WhatsApp. Waiting for payment...
-                      </p>
-                      <div className="flex flex-col gap-3 mt-4">
-                        <button 
-                          onClick={() => {
-                            closeOrder(checkoutOrder, "completed");
-                            setCheckoutOrder(null);
-                          }}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all shadow-md"
-                        >
-                          Payment Done / Close Ticket
-                        </button>
-                        <button 
-                          onClick={handleWhatsAppSend}
-                          disabled={!isOnline}
-                          className="w-full border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50 font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all"
-                        >
-                          Resend Bill
-                        </button>
-                      </div>
+                      <button 
+                        onClick={() => {
+                          closeOrder(checkoutOrder, "completed");
+                          setCheckoutOrder(null);
+                        }}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider text-xs py-3.5 rounded-xl transition-all shadow-md"
+                      >
+                        Close Ticket
+                      </button>
                     </div>
                   )}
                 </div>

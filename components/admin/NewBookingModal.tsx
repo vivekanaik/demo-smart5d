@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, Calendar as CalendarIcon, Clock, Users, User, Phone, Check } from "lucide-react";
-import { createReservation } from "@/actions/tables";
+import { submitReservationWithFallback } from "@/hooks/usePendingBookingSync";
 import { useAdminLanguage } from "./AdminLanguageProvider";
 
 type Table = {
@@ -16,10 +16,12 @@ export function NewBookingModal({
   isOpen,
   onClose,
   tables,
+  onRefresh,
 }: {
   isOpen: boolean;
   onClose: () => void;
   tables: Table[];
+  onRefresh?: () => void;
 }) {
   const { t } = useAdminLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,7 +42,7 @@ export function NewBookingModal({
     try {
       const reservationTime = new Date(`${formData.date}T${formData.time}:00`);
       
-      await createReservation({
+      await submitReservationWithFallback({
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         tableId: Number(formData.tableId),
@@ -48,6 +50,7 @@ export function NewBookingModal({
         guestsCount: Number(formData.guestsCount),
       });
       
+      onRefresh?.();
       onClose();
       // Reset form
       setFormData({

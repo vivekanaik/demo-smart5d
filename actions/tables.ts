@@ -59,17 +59,23 @@ export async function createReservation(data: {
   reservationTime: Date;
   guestsCount: number;
 }) {
-  await db.insert(reservations).values({
-    customerName: data.customerName,
-    customerPhone: data.customerPhone,
-    tableId: data.tableId,
-    reservationTime: data.reservationTime,
-    guestsCount: data.guestsCount,
-    status: "pending",
-  });
+  try {
+    await db.insert(reservations).values({
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      tableId: data.tableId,
+      reservationTime: data.reservationTime,
+      guestsCount: data.guestsCount,
+      status: "pending",
+    });
 
-  // Revalidate the tables page
-  revalidatePath("/admin/tables");
+    // Revalidate the tables page
+    revalidatePath("/admin/tables");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to create reservation:", error);
+    return { success: false, error: error.message };
+  }
 }
 
 export async function updateTable(

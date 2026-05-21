@@ -52,6 +52,7 @@ export function OrdersTable({ initialOrders, onViewOrder }: OrdersTableProps) {
         <div className="relative w-full sm:w-96">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
           <input
+            suppressHydrationWarning
             type="text"
             placeholder="Search by ID, name, or table..."
             value={search}
